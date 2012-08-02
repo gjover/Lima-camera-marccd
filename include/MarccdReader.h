@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <limits>
 
-#include "Debug.h"
+//#include "Debug.h"
 #include "Data.h"
 
 #include "HwMaxImageSizeCallback.h"
@@ -41,7 +41,7 @@ namespace Marccd
 
 class Reader : public yat::Task
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "Reader", "Marccd");
+  DEB_CLASS_NAMESPC(DebModCamera, "Reader", "Marccd");
 
 public:
 	//- CTOR
@@ -71,7 +71,7 @@ protected:
 	virtual void handle_message( yat::Message& msg )    throw (yat::Exception);
 
 	//- read Marccd image from a file and update device image attribute
-	virtual void getImageFromFile();
+	bool getImageFromFile();
 
 private:
 
@@ -82,10 +82,10 @@ private:
 	int                         _image_number;
 
 	//- Loading image stuff!
-	Size                        _image_size;
-	std::string									_currentImgFileName;	//- new image to read
+	// Size                        _image_size;
+	std::string		_currentImgFileName;	//- new image to read
 	uint16_t*                   _simulated_image;
-	bool												_is_reader_open_image_file;	//- FALSE : to return a simulated image !
+	bool			_is_reader_open_image_file;	//- FALSE : to return a simulated image !
 
 	//- Timeout management (while processing image file)
 	yat::Timeout*								_tmOut;

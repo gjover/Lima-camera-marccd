@@ -5,12 +5,11 @@
 #include "MarccdCamera.h"
 #include "MarccdReader.h"
 
-
-
 namespace lima
 {
 namespace Marccd
 {
+
 class Interface;
 
 //*******************************************************************
@@ -19,7 +18,7 @@ class Interface;
 //*******************************************************************
 class DetInfoCtrlObj : public HwDetInfoCtrlObj
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "Marccd");
+  DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "Marccd");
 
  public:
 	DetInfoCtrlObj(Camera& cam);
@@ -57,7 +56,7 @@ class DetInfoCtrlObj : public HwDetInfoCtrlObj
 //*******************************************************************
 class BufferCtrlObj : public HwBufferCtrlObj
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "BufferCtrlObj", "Marccd");
+  DEB_CLASS_NAMESPC(DebModCamera, "BufferCtrlObj", "Marccd");
 
  public:
 	BufferCtrlObj(Camera& simu);
@@ -111,7 +110,7 @@ class BufferCtrlObj : public HwBufferCtrlObj
 // *******************************************************************/
 class SyncCtrlObj : public HwSyncCtrlObj
 {
-    DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "Marccd");
+  DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "Marccd");
 
   public:
 		SyncCtrlObj(Camera& cam);
@@ -126,6 +125,9 @@ class SyncCtrlObj : public HwSyncCtrlObj
 
     virtual void setLatTime(double  lat_time);//- Not supported by Marccd
     virtual void getLatTime(double& lat_time);//- Not supported by Marccd
+
+    virtual void setNbFrames(int  nb_frames);
+    virtual void getNbFrames(int& nb_frames);
 
     virtual void setNbHwFrames(int  nb_frames);
     virtual void getNbHwFrames(int& nb_frames);
@@ -149,7 +151,7 @@ class BinCtrlObj : public HwBinCtrlObj
   virtual void setBin(const Bin& bin);
   virtual void getBin(Bin& bin);
   //allow all binning
-  virtual void checkBin(Bin& ) {}
+  virtual void checkBin(Bin& ); //{}
  private:
   Camera& m_cam;
 };
@@ -160,7 +162,7 @@ class BinCtrlObj : public HwBinCtrlObj
 //*******************************************************************/
 class Interface : public HwInterface
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "MarccdInterface", "Marccd");
+  DEB_CLASS_NAMESPC(DebModCamera, "Interface", "Marccd");
 
  public:
 	Interface(Camera& cam);
@@ -172,10 +174,12 @@ class Interface : public HwInterface
 	virtual void 	prepareAcq();
 	virtual void 	startAcq();
 	virtual void 	stopAcq();
-	virtual void  takeBackgroundFrame();
 	virtual void 	getStatus(StatusType& status);
+	virtual int 	getNbAcquiredFrames();
 	virtual int 	getNbHwAcquiredFrames();
-	virtual void	getFrameRate(double& frame_rate);
+
+	void  takeBackgroundFrame();
+	void	getFrameRate(double& frame_rate);
 	
 	void setImageIndex(int imgIdx);
 	int	 getImageIndex(void);		
@@ -187,12 +191,12 @@ class Interface : public HwInterface
 	const string& 	getImagePath(void);
 	
 	//- Reader task timeout to process image from file
-	void setTimeout(int TO);
+	//void setTimeout(int TO);
 	
 	//- get MARCCD image from file
-	void enableReader(void);
+	//void enableReader(void);
 	//- get a simulated image
-	void disableReader(void);
+	//void disableReader(void);
 	
  private:
 	Camera&				  m_cam;
