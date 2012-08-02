@@ -189,6 +189,8 @@ class Interface : public HwInterface
 	
 	void setImagePath(const string& path);
 	const string& 	getImagePath(void);
+
+	unsigned int getCamState();
 	
 	//- Reader task timeout to process image from file
 	//void setTimeout(int TO);

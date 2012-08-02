@@ -43,6 +43,7 @@ namespace lima
 	  Exposure,
 	  Readout,
 	  Latency,
+	  Config,
 	  Fault,
 	  Unknown
 	};
@@ -85,7 +86,8 @@ namespace lima
 	void setNbFrames(int  nb_frames);
 	void getNbFrames(int& nb_frames);
 	
-	void getStatus(Camera::Status& status);      
+	void getStatus(Camera::Status& status);  
+	unsigned int getState();
 	void getFrameRate(double& frame_rate);
 	
 	void setBinning(const Bin&);
@@ -190,7 +192,8 @@ namespace lima
 
 	//bool _stop_already_done;
 	bool _stop_sequence_finished;
-       
+
+	bool _bgAcquired;
       };
   } //- namespace Marccd
 } // namespace lima

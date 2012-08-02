@@ -486,7 +486,13 @@ BinCtrlObj::BinCtrlObj(Camera &cam)
 void BinCtrlObj::setBin(const Bin& aBin)
 {
   Bin myBin = aBin;
+//   std::cout   << "BinCtrlObj::setBin " 
+// 	      << aBin.getX() << "x"
+// 	      << aBin.getY() << std::endl;  
   checkBin(myBin);
+//   std::cout   << "---> After check:  " 
+// 	      << myBin.getX() << "x"
+// 	      << myBin.getY() << std::endl;  
   m_cam.setBinning(myBin);
 }
 
@@ -646,8 +652,6 @@ void Interface::getStatus(StatusType& status)
     }
   else
     {
-     
-
       m_cam.getStatus(marccd_status);
       switch (marccd_status)
 	{
@@ -671,6 +675,11 @@ void Interface::getStatus(StatusType& status)
 	  status.det = DetLatency;
 	  break;
 	  
+	case Camera::Config:
+	  status.acq = AcqConfig;
+	  status.det = DetFault;
+	  break;
+
 	case Camera::Unknown:
 	case Camera::Fault:
 	  status.acq = AcqFault;
@@ -765,3 +774,11 @@ int Interface::getImageIndex()
         return m_cam.getImageIndex();
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+unsigned int Interface::getCamState()
+{
+  DEB_MEMBER_FUNCT();
+  return m_cam.getState();
+}

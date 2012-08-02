@@ -38,6 +38,8 @@ class Interface : HwInterface
 	void setImagePath(const std::string& path);
 	const std::string&  getImagePath();
 	
+	unsigned int getCamState();
+
 	//- Reader task timeout to process image from file
 	//void setTimeout(int TO);
 	

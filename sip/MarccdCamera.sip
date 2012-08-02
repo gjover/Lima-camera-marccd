@@ -61,6 +61,7 @@ namespace Marccd
     void getNbFrames(int& nb_frames /Out/);
 
     void getStatus(Marccd::Camera::Status& status /Out/);
+    unsigned int getState();
     void getFrameRate(double& frame_rat /Out/);
     
     void setBinning(const Bin&);

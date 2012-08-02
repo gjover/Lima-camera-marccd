@@ -27,14 +27,13 @@ const size_t MARCCD_RESET_MSG     =   (yat::FIRST_USER_MSG + 302);
 Reader::Reader(Camera& cam, HwBufferCtrlObj& buffer_ctrl)
       : _cam(cam),
         _buffer(buffer_ctrl),
-				_image_number(0),
-	//_image_size(0),
-				_currentImgFileName(""),
-				_simulated_image(0),
-				_is_reader_open_image_file(true),	//- read image from file (no simulated image)
-				_tmOut(0)
+	_image_number(0),
+	_currentImgFileName(""),
+	_simulated_image(0),
+	_is_reader_open_image_file(true),  //- read image from file (no simulated image)
+	_tmOut(0)
 {
-	DEB_CONSTRUCTOR();
+  DEB_CONSTRUCTOR();
 }
 
 //---------------------------
@@ -97,6 +96,7 @@ void Reader::reset()
 int Reader::getLastAcquiredFrame(void)
 {
 	yat::MutexLock scoped_lock(_lock);
+	// _image_number corresponds to the image the reader looks for.
 	return this->_image_number - 1;        
 }
 
@@ -199,13 +199,13 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	case yat::TASK_PERIODIC:
 	  {
 	    DEB_TRACE() << "Reader::->TASK_PERIODIC";
-	    std::cout   << "Reader::->TASK_PERIODIC" << std::endl;
+	    //std::cout   << "Reader::->TASK_PERIODIC" << std::endl;
 	    //- check if timeout expired
 	    if ( this->_tmOut->expired() )
 	      {
 		DEB_TRACE() << "FATAL::Failed to load image : timeout expired !";
-		std::cout   << "FATAL::Failed to load image : timeout expired !" 
-			    << std::endl;
+		//std::cout << "FATAL::Failed to load image : timeout expired !" 
+		//	  << std::endl;
 		
 		//- disable periodic msg
 		this->enable_periodic_msg(false);
@@ -221,24 +221,21 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	    // Force nfs file system to refresh
 	    std::stringstream lsCommand;
 	    lsCommand  << "ls " 
+		       << this->_cam.getImagePath()
+		       << "; ls "
 		       << newFileName.str()
-	      //<< " >& /dev/null" 
+		       << " >& /dev/null" // avoid print out 
 	      ;
-
 	    system(lsCommand.str().c_str());
 
 	    //- check if file exist	  
 	    std::ifstream imgFile(newFileName.str().c_str());
 
-	    std::cout << "Current File: " << this->_currentImgFileName
-		      << "\nNext File:    " << newFileName.str() 
-		      << std::endl;
-
 	    if ( imgFile && this->_currentImgFileName != newFileName.str())
 	      {
 		this->_currentImgFileName = newFileName.str();
-		std::cout << "\t\t\t Reader: File [" << newFileName.str()
-			  << "] exist ..." << std::endl;
+		//std::cout << "\t\t\t Reader: File [" << newFileName.str()
+		//	  << "] exist ..." << std::endl;
 
 		//- read image file
 		this->getImageFromFile();
@@ -254,10 +251,9 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 		  }
 		else 
 		  {
-		    std::cout << "Reader: All images read." 
-			      << std::endl;
-
+		    //std::cout << "Reader: All images read." << std::endl;
 		    //- disable periodic msg
+		    this->_tmOut->disable();
 		    this->enable_periodic_msg(false);
 		  }
 		
@@ -265,7 +261,7 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	      }
 	    else 
 	      { 
-		std::cout << "\t\t\t Reader::->imgFile DOES NOT exist ..." << std::endl;
+		//std::cout << "\t\t\t Reader::->imgFile DOES NOT exist ..." << std::endl;
 	      }
 	  }
 	  break;
@@ -273,7 +269,7 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	case MARCCD_START_MSG:    
 	  {
 	    DEB_TRACE() << "Reader::->MARCCD_START_MSG";
-	    std::cout   << "Reader::->MARCCD_START_MSG" << std::endl;
+	    //std::cout   << "Reader::->MARCCD_START_MSG" << std::endl;
 	    //- enable periodic msg
 	    this->enable_periodic_msg(true);
 	    // Next image we are waiting for
@@ -288,13 +284,14 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	case MARCCD_RESET_MSG:
 	  {
 	    DEB_TRACE() << "Reader::->MARCCD_RESET_MSG";
-	    std::cout   << "Reader::->MARCCD_RESET_MSG" << std::endl;
+	    //std::cout   << "Reader::->MARCCD_RESET_MSG" << std::endl;
 	    this->enable_periodic_msg(false);
 	    this->_image_number = this->_cam.getImageIndex();
+	    // Clean buffer
 	    std::stringstream rmCommand;
 	    rmCommand  << "rm " << this->_cam.getImagePath()  
 		       << this->_cam.getImageFileName()
-		       << "_* >& /dev/null" ;
+		       << "_* >& /dev/null" ; // avoid print out
 	    system(rmCommand.str().c_str());
 	  }
 	  break;    
@@ -309,8 +306,7 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 }
 //-----------------------------------------------------
 bool Reader::getImageFromFile ()
-{
-  
+{  
 
   StdBufferCbMgr& buffer_mgr = ((reinterpret_cast<BufferCtrlObj&>(this->_buffer)).getBufferCbMgr());
 
