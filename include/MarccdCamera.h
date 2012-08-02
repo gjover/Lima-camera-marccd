@@ -108,6 +108,11 @@ namespace lima
 	void setImageIndex(int newImgIdx);
 	int getImageIndex() ;
 	int getFirstImage() ;
+
+        void setBeamX(float);
+        void setBeamY(float);
+        void setDistance(float);
+        void setWavelength(float);
 	
       protected:
 	virtual void setMaxImageSizeCallbackActive(bool cb_active);	
@@ -142,6 +147,7 @@ namespace lima
 	 * update marccd state
 	 */
 	void get_marccd_state();
+#if 0
 	/**
 	 * Method to start an Marccd acquisition
 	 */
@@ -150,6 +156,11 @@ namespace lima
 	 * Method to stop an Marccd acquisition
 	 */
 	void perform_stop_sequence();
+#endif
+	/**
+	 * Method to perform an Marccd acquisition
+	 */
+	void perform_acquisition_sequence();
 	/**
 	 * Method to abort an Marccd acquisition
 	 */
@@ -192,6 +203,7 @@ namespace lima
 
 	//bool _stop_already_done;
 	bool _stop_sequence_finished;
+	bool _abort;
 
 	bool _bgAcquired;
       };

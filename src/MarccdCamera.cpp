@@ -1,6 +1,7 @@
 #include "MarccdCamera.h"
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <math.h>
 #include <time.h>
@@ -93,6 +94,7 @@ Camera::Camera(const std::string& camera_ip,
   _detector_model(""),
   _detector_type(""),
   _stop_sequence_finished(false),
+  _abort(false),
   _bgAcquired(false)
 {
   DEB_CONSTRUCTOR();
@@ -148,6 +150,7 @@ Camera& Camera::operator=(const Camera& other_cam)
   
   _marccd_state                 = other_cam._marccd_state;
   _stop_sequence_finished       = other_cam._stop_sequence_finished;
+  _abort                        = other_cam._abort;
   
   _image_number                 = other_cam._image_number;
   _first_image                  = other_cam._first_image;
@@ -170,6 +173,18 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 {
   DEB_MEMBER_FUNCT();
   //std::cout << "Camera yat message: " << msg.type() << std::endl;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  static size_t lastmsg = 0;
+
+  if (msg.type() != lastmsg)
+    {
+      std::cout << "Camera yat message: " << msg.type() << " (t " 
+	//<< (now.tv_sec + (double) now.tv_nsec/1000000000 )
+		<< now.tv_sec << "." << now.tv_nsec
+		<< ")\n";
+      lastmsg = msg.type();
+    }
   try
     {
       switch ( msg.type() )
@@ -283,39 +298,26 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 	  {
 	    DEB_TRACE() << "Camera::->START_MSG";
 	    
-	    
-	    _first_image = _image_number;
-	    for (int i = _first_image; i < _first_image + m_nb_frames; i++)
+	    try 
 	      {
-		try 
-		  {
-		    clock_t exposure = m_exp_time * CLOCKS_PER_SEC + clock();
-		    this->perform_start_sequence();
-		    // Wait for the exposure time
-		    while (exposure > clock());
-		    clock_t latency  = m_lat_time * CLOCKS_PER_SEC + clock();
-		    this->perform_stop_sequence();
-		    // Wait for the latency time
-		    while (latency > clock());
-		  }
-		catch (Exception e)
-		  {
-		    m_nb_frames = 0; // This will stop the reader
-		    //std::cout << "ERROR: Camera::->START_MSG --> " << e.getErrDesc() << std::endl;
-		    throw e;	
-		  }
-		catch (...)
-		  {
-		    m_nb_frames = 0; // This will stop the reader
-		    //std::cout << "ERROR: Camera::->START_MSG --> unknown error (" 
-		    //      << std::hex << this->_marccd_state << std::dec << ")"
-		    //      << std::endl;
-		    throw  LIMA_HW_EXC(Error, "Camera::->START_MSG ") 
-		      << DEB_HEX(this->_marccd_state);	
-		  }
+		this->perform_acquisition_sequence();
+	      }
+	    catch (Exception e)
+	      {
+		m_nb_frames = 0; // This will stop the reader
+		//std::cout << "ERROR: Camera::->START_MSG --> " << e.getErrDesc() << std::endl;
+		throw e;	
+	      }
+	    catch (...)
+	      {
+		m_nb_frames = 0; // This will stop the reader
+		//std::cout << "ERROR: Camera::->START_MSG --> unknown error (" 
+		//      << std::hex << this->_marccd_state << std::dec << ")"
+		//      << std::endl;
+		throw  LIMA_HW_EXC(Error, "Camera::->START_MSG ") 
+		  << DEB_HEX(this->_marccd_state);	
 	      }
 	    
-
 	    DEB_TRACE() << "Camera::->START_MSG DONE";
 	    //std::cout << "Camera::->START_MSG DONE." << std::endl;
 	  }
@@ -428,6 +430,7 @@ void Camera::stop()
   if( !this->_sock )
     throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
   
+  this->_abort = true;
   //- prepare msg
   yat::Message * msg = new yat::Message(STOP_MSG, MAX_USER_PRIORITY);
   if ( !msg )
@@ -709,7 +712,6 @@ void Camera::getFrameRate(double& frame_rate)
 //-----------------------------------------------------
 void Camera::setBinning(const Bin &bin)
 {
-  std::string cmd_to_send("set_bin,");
   std::stringstream bin_values;
   
   if( !this->_sock )
@@ -825,6 +827,95 @@ unsigned int Camera::getState()
 {
   this->get_marccd_state();
   return this->_marccd_state;
+}
+
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setBeamX(float X)
+{
+  std::stringstream cmd;
+  if( !this->_sock )
+    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+  
+  try
+    {
+      cmd << "header,beam_x=" << X << "\n";
+      yat::MutexLock scoped_lock(this->_lock);
+      this->write_read(cmd.str());
+    }
+  catch (...)
+    {
+      //- Error handling
+      std::cerr << "MARCAM SET BEAM X -> An ... exception occurred!"  << std::endl;
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setBeamY(float Y)
+{
+  std::stringstream cmd;
+  if( !this->_sock )
+    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+  
+  try
+    {
+      cmd << "header,beam_y=" << Y << "\n";
+      yat::MutexLock scoped_lock(this->_lock);
+      this->write_read(cmd.str());
+    }
+  catch (...)
+    {
+      //- Error handling
+      std::cerr << "MARCAM SET BEAM Y -> An ... exception occurred!"  << std::endl;
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setDistance(float D)
+{
+  std::stringstream cmd;
+  if( !this->_sock )
+    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+  
+  try
+    {
+      cmd << "header,detector_distance=" << D << "\n";
+      yat::MutexLock scoped_lock(this->_lock);
+      this->write_read(cmd.str());
+    }
+  catch (...)
+    {
+      //- Error handling
+      std::cerr << "MARCAM SET DISTANCE -> An ... exception occurred!"  << std::endl;
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setWavelength(float W)
+{
+  std::stringstream cmd;
+  if( !this->_sock )
+    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+  
+  try
+    {
+      cmd << "header,source_wavelength=" << W << "\n";
+      yat::MutexLock scoped_lock(this->_lock);
+      this->write_read(cmd.str());
+    }
+  catch (...)
+    {
+      //- Error handling
+      std::cerr << "MARCAM SET WAVELENGTH -> An ... exception occurred!"  << std::endl;
+    }
 }
 
 //-----------------------------------------------------
@@ -987,115 +1078,183 @@ std::string Camera::write_read(std::string cmd_to_send)
 }
 
 //-----------------------------------------------------
-// - perform_start_sequence : manage a Marccd acquisition
+// - perform_acquisition_sequence : manage a Marccd acquisition
 //-----------------------------------------------------
-void Camera::perform_start_sequence()
+void Camera::perform_acquisition_sequence()
 {
-  DEB_MEMBER_FUNCT();
-  //std::cout << "Camera::perform_start_sequence <- " << std::endl;
-  
+
+  _first_image = _image_number;
+  int step = 0;
+  time_t sec = 0;
+  long  nsec = 0;
+
+  struct timespec now, exposure, latency;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  clock_gettime(CLOCK_MONOTONIC,&exposure); 
+  clock_gettime(CLOCK_MONOTONIC,&latency);
+ 
   this->_stop_sequence_finished = false;
   this->_full_img_name = "";
-  //---------------------------------------
-  //-		PREPARE SEQUENCE
-  //---------------------------------------
-  //- Wait for Marccd to not be acquiring !
-  //std::cout << "Wait for ACQUIRE + EXECUTING" << std::endl;
-  do
+
+  int laststep = 0;
+  while ( _image_number < _first_image + m_nb_frames && !this->_abort )
     {
-      this->get_marccd_state();
-      if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
-	  || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
-	  || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
+      if (laststep != step)
 	{
-	  throw LIMA_HW_EXC(Error, "Camera::perform_start_sequence (Wait before start) ")
-	    << DEB_HEX(this->_marccd_state);		    
+	  laststep = step;
+	  clock_gettime(CLOCK_MONOTONIC,&now);
+	  std::cout << "Step " << step << " (t " 
+	    //<< (now.tv_sec + (double) now.tv_nsec/1000000000 )
+		    << now.tv_sec << "." 
+		    << std::setfill('0') << std::setw(9) << now.tv_nsec
+		    << ")\n";
 	}
-      //std::cout << "Camera::perform_start_sequence -> ACQ on the way, state = " << this->_marccd_state << std::endl;
-    }while(TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_EXECUTING));
-  //std::cout << "Done for ACQUIRE + EXECUTING" << std::endl;
+      
+      switch (step)
+	{
+	case 0: //- Prepare acquisition
+	  step++;
+	  break;
 
-  //std::cout << "\t **** Wait for Marccd to not be acquiring DONE -> _marccd_state = " << this->_marccd_state << std::endl;
-  
-  //---------------------------------------
-  //-		TELL MARCCD START ACQUIRING
-  //---------------------------------------
-  //- Send start cmd
-  //clock_t tinit;
-  std::string cmd_to_send("start");
-  {
-    yat::MutexLock scoped_lock(this->_lock);
-    //tinit = clock();
-    this->write_read(cmd_to_send);
-  }
-  this->get_marccd_state();
-  DEB_PARAM() << " **** START SENT !!!" ;
-  //std::cout << "\t **** START SENT !!!" 
-  //	  << "(" << this->_marccd_state  << ")"
-  //	  << std::endl;
+	case 1: //- Wait for Marccd to not be acquiring 
+	  this->get_marccd_state();
+	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
+	      || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
+	      || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
+	    {
+	      throw LIMA_HW_EXC(Error, "Camera::perform_start_sequence (Wait before start) ")
+		<< DEB_HEX(this->_marccd_state);		    
+	    }
 
-  // Timing test    
-//   do
-//     {
-//       this->get_marccd_state();
-//       std::cout << "CamState 0x" 
-// 		<< std::hex << this->_marccd_state << std::dec 
-// 		<< " T:" << (clock()-tinit)*1./CLOCKS_PER_SEC
-// 		<< std::endl;
-//     }while(!TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_EXECUTING));
-  
-  
-  //---------------------------------------
-  //-		SHUTTER CONTROLLED IN DS -> TODO : to be implemented !!!
-  //---------------------------------------
-  //std::cout << "Camera::perform_start_sequence -> " << std::endl;
+	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_EXECUTING))
+	    break;
+	  step++;
+	  break;
+
+	case 2: //- Wait for the latency time
+	  clock_gettime(CLOCK_MONOTONIC,&now);
+	  if (latency.tv_sec + (double) latency.tv_nsec /1000000000.0 
+	      - now.tv_sec - (double) now.tv_nsec /1000000000.0 > 0.2)
+	    {
+	      sleep(0.1);
+	      break;
+	    }
+	  step++;
+	  break;
+	  
+	case 3: //- Send start cmd
+	  {
+	    std::string cmd_to_send("start");
+
+	    yat::MutexLock scoped_lock(this->_lock);
+	    clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&latency,NULL); 
+	    clock_gettime(CLOCK_MONOTONIC,&now);
+	    this->write_read(cmd_to_send);
+	  }
+	  // Define when the exposure time finish
+	  sec = (int) m_exp_time;
+	  nsec= (m_exp_time - sec)*1000000000;
+	  if (nsec + now.tv_nsec >= 1000000000)
+	    {
+	      nsec -= 1000000000;
+	      sec++;
+	    }
+	  exposure.tv_sec  = now.tv_sec + sec;
+	  exposure.tv_nsec = now.tv_nsec + nsec;
+	  // Define when the latency time finish
+	  sec = (int) m_lat_time;
+	  nsec= (m_exp_time - sec)*1000000000;
+	  if (nsec + exposure.tv_nsec >= 1000000000)
+	    {
+	      nsec -= 1000000000;
+	      sec++;
+	    }
+	  latency.tv_sec  = exposure.tv_sec + sec;
+	  latency.tv_nsec = exposure.tv_nsec + nsec;
+
+	  std::cout << "Start ->"
+		    << now.tv_sec << "." 
+		    << std::setfill('0') << std::setw(9) << now.tv_nsec
+		    << ")\n";
+	  std::cout << "Stop  ->"
+		    << exposure.tv_sec << "." 
+		    << std::setfill('0') << std::setw(9) << exposure.tv_nsec
+		    << ")\n";
+	  std::cout << "Lat   ->"
+		    << latency.tv_sec << "." 
+		    << std::setfill('0') << std::setw(9) << latency.tv_nsec
+		    << ")\n";
+
+
+	  step++;
+	  break;
+	  
+	case 4: //- Wait for acquisition to be started
+	  this->get_marccd_state();
+	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
+	      || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
+	      || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
+	    {
+	      throw LIMA_HW_EXC(Error, "Camera::perform_start_sequence (Wait before start) ")
+		<< DEB_HEX(this->_marccd_state);		    
+	    }
+	  
+	  if (!TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_EXECUTING))
+	    break;
+	  step++;
+	  break;
+	  
+	case 5: //- Wait for the exposure time 
+	  clock_gettime(CLOCK_MONOTONIC,&now);
+	  if (exposure.tv_sec + (double) exposure.tv_nsec /1000000000.0 
+	      - now.tv_sec - (double) now.tv_nsec /1000000000.0 > 0.2)
+	    {
+	      sleep(0.1);
+	      break; 
+	    }
+	  step++;
+	  break;
+
+	case 6: //- Send readout cmd with a specific file name
+	  {
+	    std::string cmd_to_send("readout,0,");
+	    this->_full_img_name = this->_image_path + this->_image_name 
+	      + "_" + yat::XString<size_t>::to_string(this->_image_number);
+	    cmd_to_send += this->_full_img_name;
+	    
+	    yat::MutexLock scoped_lock(this->_lock);
+	    clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&exposure,NULL); 
+	    this->write_read(cmd_to_send);
+	  }
+	  step++;
+	  break;
+
+	case 7: //- Wait for Marccd until writing has finished
+	  this->get_marccd_state();
+	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
+	      || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
+	      || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
+	    {
+	      throw LIMA_HW_EXC(Error, "Camera::perform_stop_sequence (Wait for writting)")
+		<< DEB_HEX(this->_marccd_state);		    
+	    }
+	  
+	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATE_WRITING))
+	    break;
+	  
+	  this->_image_number++;
+	  this->_stop_sequence_finished = true;
+	  step++;
+	  break;
+
+	default:
+	  step = 0;
+	  
+	} //end switch 
+    } // end while
+
 }
 
-//-----------------------------------------------------
-// - perform_stop_sequence : manage a Marccd END acquisition
-//-----------------------------------------------------
-void Camera::perform_stop_sequence()
-{
-  DEB_MEMBER_FUNCT();
-  //std::cout << "Camera::perform_stop_sequence <- " << std::endl;
-  
-  //- Send readout cmd with a specific file name
-  std::string cmd_to_send("readout,0,");
-  this->_full_img_name = this->_image_path + this->_image_name + "_" + yat::XString<size_t>::to_string(this->_image_number);
-  cmd_to_send += this->_full_img_name;
-  //std::cout << "\t\tCamera::written file : &" << cmd_to_send << "$" << std::endl;
-  
-  {
-    yat::MutexLock scoped_lock(this->_lock);
-    this->write_read(cmd_to_send);
-  }
-  this->get_marccd_state();
-  DEB_PARAM() << " **** STOP SENT !!!" ;
-  //std::cout << "\t **** STOP SENT !!!" 
-  //    << "(" << this->_marccd_state << ")"
-  //    << std::endl;
-
-  //std::cout << "\t\tCamera::perform_stop_sequence -> this->_full_img_name = " << this->_full_img_name << std::endl;
-  
-  //std::cout << "Wait for WRITE + WRITING" << std::endl;
-  do
-    {
-      this->get_marccd_state();
-      if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
-	  || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
-	  || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
-	{
-	  throw LIMA_HW_EXC(Error, "Camera::perform_stop_sequence (Wait for writting)")
-	    << DEB_HEX(this->_marccd_state);		    
-	}
-      //std::cout << "Camera::perform_stop_sequence -> CHECKING MARCCD STATE : " << this->_marccd_state << std::endl;
-    }
-  while(TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATE_WRITING));
-  //std::cout << "Done for WRITE + WRITING" << std::endl;
-  
-  this->_image_number++;
-  this->_stop_sequence_finished = true;
-}
 
 //-----------------------------------------------------
 // - perform_background_frame : sequence to take a background (dark) frame
@@ -1213,7 +1372,7 @@ void Camera::perform_abort_sequence()
   //-		TELL MARCCD ABORT ACQUIRING
   //---------------------------------------
   //- Send abort cmd
-  // 5./m_binning is the readout time is seconds
+  // 5./m_binning is the readout time in seconds
   clock_t wait = 5./m_binning * CLOCKS_PER_SEC + clock();
   {
     std::string cmd_to_send("abort");
@@ -1237,7 +1396,7 @@ void Camera::perform_abort_sequence()
   //---------------------------------------
   //std::cout << "Camera::perform_abort_sequence -> " << std::endl;
   this->_stop_sequence_finished = true;
-
+  this->_abort = false;
 }
 
 //-----------------------------------------------------

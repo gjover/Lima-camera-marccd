@@ -82,6 +82,12 @@ namespace Marccd
     void setImageIndex(int newImgIdx);
     int getImageIndex();
     int getFirstImage() ;
+
+    void setBeamX(float);
+    void setBeamY(float);
+    void setDistance(float);
+    void setWavelength(float);
+
     };
 
 };

@@ -1,15 +1,14 @@
-
 #include <yat/threading/Mutex.h>
 #include <sstream>
 #include <iostream>
 #include <string>
 #include <math.h>
+#include <time.h>
 #include "Debug.h"
 #include "Constants.h"
 #include "Data.h"
 #include "MarccdReader.h"
 #include "MarccdInterface.h"
-
 
 #define kLO_WATER_MARK      128
 #define kHI_WATER_MARK      512
@@ -17,7 +16,7 @@
 #define kPOST_MSG_TMO       2
 
 const size_t kTASK_PERIODIC_TIMEOUT_MS	 =  1000;
-const double kDEFAULT_READER_TIMEOUT_SEC = 60.;
+const double kDEFAULT_READER_TIMEOUT_SEC = 10.;
 const size_t MARCCD_START_MSG     =   (yat::FIRST_USER_MSG + 300);
 const size_t MARCCD_RESET_MSG     =   (yat::FIRST_USER_MSG + 302);
 
@@ -25,7 +24,16 @@ const size_t MARCCD_RESET_MSG     =   (yat::FIRST_USER_MSG + 302);
 //- Ctor
 //---------------------------
 Reader::Reader(Camera& cam, HwBufferCtrlObj& buffer_ctrl)
-      : _cam(cam),
+  : yat::Task(Config(false,    //- disable timeout msg
+                     1000,     //- every second (i.e. 1000 msecs)
+                     true,     //- enable periodic msgs
+                     1000,     //- every second (i.e. 1000 msecs)
+                     false,    //- don't lock the internal mutex while handling a msg (recommended setting)
+                     kDEFAULT_LO_WATER_MARK,   //- msgQ low watermark value
+                     kDEFAULT_HI_WATER_MARK,   //- msgQ high watermark value
+                     false,    //- do not throw exception on post msg timeout (msqQ saturated)
+                     0)),      //- user data (same for all msgs) - we don't use it here
+        _cam(cam),
         _buffer(buffer_ctrl),
 	_image_number(0),
 	_currentImgFileName(""),
@@ -54,19 +62,24 @@ Reader::~Reader()
 //---------------------------
 void Reader::start()
 {
-	DEB_MEMBER_FUNCT();
+  DEB_MEMBER_FUNCT();
+  
+  try
+    {
+      double eTime, lTime;
+      this->_cam.getExpTime(eTime);
+      this->_cam.getLatTime(lTime);
+      this->setTimeout( kDEFAULT_READER_TIMEOUT_SEC + eTime + lTime);
 
-	try
-	{
-		this->post(new yat::Message(MARCCD_START_MSG), kPOST_MSG_TMO);
-	}
-	catch (Exception &e)
-	{
-		// Error handling
-		DEB_ERROR() << e.getErrMsg();
-		throw LIMA_HW_EXC(Error, e.getErrMsg());
-	}
-
+      this->post(new yat::Message(MARCCD_START_MSG), kPOST_MSG_TMO);
+    }
+  catch (Exception &e)
+    {
+      // Error handling
+      DEB_ERROR() << e.getErrMsg();
+      throw LIMA_HW_EXC(Error, e.getErrMsg());
+    }
+  
 }
 
 //---------------------------
@@ -163,10 +176,25 @@ void Reader::disableReader(void)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+int* Reader::getHeader(void)
+{  
+  DEB_MEMBER_FUNCT();
+  return hccd.data;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 {
   DEB_MEMBER_FUNCT();
-  //std::cout << "Reader yat message: " << msg.type() << std::endl;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  std::cout << "Reader yat message: " << msg.type() << " (t " 
+    //<< (now.tv_sec + (double) now.tv_nsec/1000000000 )
+	    << now.tv_sec << "." << now.tv_nsec
+	    << ")\n";
+  
   try
     {
       switch ( msg.type() )
@@ -200,6 +228,7 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	  {
 	    DEB_TRACE() << "Reader::->TASK_PERIODIC";
 	    //std::cout   << "Reader::->TASK_PERIODIC" << std::endl;
+	    
 	    //- check if timeout expired
 	    if ( this->_tmOut->expired() )
 	      {
@@ -222,9 +251,9 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	    std::stringstream lsCommand;
 	    lsCommand  << "ls " 
 		       << this->_cam.getImagePath()
-		       << "; ls "
-		       << newFileName.str()
-		       << " >& /dev/null" // avoid print out 
+	      //<< "; ls "
+	      //<< newFileName.str()
+	      //<< " >& /dev/null" // avoid print out 
 	      ;
 	    system(lsCommand.str().c_str());
 
@@ -233,13 +262,22 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 
 	    if ( imgFile && this->_currentImgFileName != newFileName.str())
 	      {
+		clock_gettime(CLOCK_MONOTONIC,&now);
+		std::cout << "Buffer File found." << " (t " 
+		  //<< (now.tv_sec + (double) now.tv_nsec/1000000000 )
+			  << now.tv_sec << "." << now.tv_nsec
+			  << ")\n";
 		this->_currentImgFileName = newFileName.str();
 		//std::cout << "\t\t\t Reader: File [" << newFileName.str()
 		//	  << "] exist ..." << std::endl;
 
 		//- read image file
-		this->getImageFromFile();
-		
+		bool ready = this->getImageFromFile();
+		clock_gettime(CLOCK_MONOTONIC,&now);
+		std::cout << "Buffer Ready: " << ready << " (t " 
+		  //<< (now.tv_sec + (double) now.tv_nsec/1000000000 )
+			  << now.tv_sec << "." << now.tv_nsec
+			  << ")\n";
 		int nb_frames;
 		this->_cam.getNbFrames(nb_frames);
 
@@ -261,6 +299,9 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	      }
 	    else 
 	      { 
+		// Fix possible _image_number de-synchronization at START
+		if (this->_cam.getFirstImage() >  _image_number )
+		  _image_number = this->_cam.getFirstImage();
 		//std::cout << "\t\t\t Reader::->imgFile DOES NOT exist ..." << std::endl;
 	      }
 	  }
@@ -324,7 +365,7 @@ bool Reader::getImageFromFile ()
   char filename[this->_currentImgFileName.size() + 1];
   strcpy(filename,this->_currentImgFileName.c_str());
   DI::DiffractionImage *tmpDI = new DI::DiffractionImage(filename);
-  
+
   //Check that the image size corresponds with the expected frame size
   Size frameSize = buffer_mgr.getFrameDim(). getSize();
   if( frameSize.getWidth()  != tmpDI->getWidth() ||
@@ -339,6 +380,30 @@ bool Reader::getImageFromFile ()
       ((uint16_t*)ptr)[j] = image[j];
     }
 
+  // Read header info
+  
+  FILE * file;
+  MARCCD_HEADER header;
+  //std::fill_n((int *)header, 768, 0);
+  file = fopen(filename, "rb");
+  if (file != NULL)
+    {
+      fseek(file, 1024, SEEK_SET);
+      if (fread(&header, sizeof(MARCCD_HEADER), 1, file) == 1)
+	{
+	  //if (hccd.header_byte_order < 1234 || hccd.header_byte_order > 4321)
+	  //  swaplong((void *) &hccd, sizeof(MARCCD_HEADER));
+	  hccd.header = header;
+	}
+      
+      fclose(file);
+    }
+  /*
+  std::cout << "Reader header: ";
+  for (int i=64; i<70;i++)
+    std::cout << " (" << hccd.data[i] << ")";
+  std::cout << "|\n";
+  */
   delete tmpDI;
 
   //std::cout << "\t\t\tnew frame ready" << std::endl; 

@@ -136,11 +136,8 @@ BufferCtrlObj::BufferCtrlObj(Camera& cam)
       m_cam(cam)
 {
   DEB_CONSTRUCTOR();
-  //std::cout << "Test 01" << std::endl;
   m_reader = new Reader(cam,*this);
-  //std::cout << "Test 02" << std::endl;
   m_reader->go(2000);  
-  //std::cout << "Test 03" << std::endl;
 }
 
 //-----------------------------------------------------
@@ -338,6 +335,12 @@ void BufferCtrlObj::disableReader(void)
 {
     DEB_MEMBER_FUNCT();
 	m_reader->disableReader();
+}
+
+int* BufferCtrlObj::getHeader()
+{
+  DEB_MEMBER_FUNCT();
+  return m_reader->getHeader();
 }
 
 /*******************************************************************
@@ -595,7 +598,7 @@ void Interface::prepareAcq()
 {
   DEB_MEMBER_FUNCT();
   m_buffer.reset();
-	m_cam.prepare();
+  m_cam.prepare();
 }
 
 //-----------------------------------------------------
@@ -604,8 +607,8 @@ void Interface::prepareAcq()
 void Interface::startAcq()
 {
   DEB_MEMBER_FUNCT();
-	m_cam.start();
-	m_buffer.update_image_from_file(); 
+  m_cam.start();
+  m_buffer.update_image_from_file(); 
 }
 
 //-----------------------------------------------------
@@ -615,6 +618,7 @@ void Interface::stopAcq()
 {
   DEB_MEMBER_FUNCT();
   m_cam.stop();
+  m_buffer.reset();
   //m_buffer.update_image_from_file();    
 }
 
@@ -782,3 +786,49 @@ unsigned int Interface::getCamState()
   DEB_MEMBER_FUNCT();
   return m_cam.getState();
 }
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setBeamX(float X)
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.setBeamX(X);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setBeamY(float Y)
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.setBeamY(Y);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setDistance(float D)
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.setDistance(D);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setWavelength(float W)
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.setWavelength(W);
+}
+
+//-----------------------------------------------------
+// get last buffer header
+//-----------------------------------------------------
+int* Interface::getHeader(void)
+{
+  DEB_MEMBER_FUNCT();
+  return m_buffer.getHeader();
+}
+
