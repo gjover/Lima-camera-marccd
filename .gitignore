@@ -2,5 +2,6 @@
 *.swp
 *.bck
 *target*
-
+*.o
+*.P
 .svn
