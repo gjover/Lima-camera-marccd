@@ -67,7 +67,7 @@ namespace lima
 	void getImageSize(Size& size);
 	//void setPixelDepth(ImageType pixel_depth);
 	//void getPixelDepth(ImageType& pixel_depth);
-	void getPixelSize(double& size);
+	void getPixelSize(double& x_size,double& y_size);
 	void getImageType(ImageType& type);
 	
 	void getDetectorType(std::string& type);
@@ -90,9 +90,14 @@ namespace lima
 	unsigned int getState();
 	void getFrameRate(double& frame_rate);
 	
+	void checkRoi(const Roi& set_roi, Roi& hw_roi);
+	void setRoi(const Roi& set_roi);
+	void getRoi(Roi& hw_roi);    
+
 	void setBinning(const Bin&);
 	void getBinning(Bin&);
-	
+	void checkBin(Bin& );
+
 	bool is_stop_sequence_finished();
 	
 	void  setImagePath(const std::string& path);
@@ -202,6 +207,7 @@ namespace lima
 	std::string _detector_type;
 
 	//bool _stop_already_done;
+	std::string _error;
 	bool _stop_sequence_finished;
 	bool _abort;
 

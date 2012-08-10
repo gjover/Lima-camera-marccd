@@ -30,8 +30,7 @@ namespace lima
       virtual void getDefImageType(ImageType& def_image_type);
       virtual void getCurrImageType(ImageType& curr_image_type);
       virtual void setCurrImageType(ImageType  curr_image_type);
-
-      virtual void getPixelSize(double& pixel_size);
+      virtual void getPixelSize(double& x_size,double &y_size);
       virtual void getDetectorType(std::string& det_type);
       virtual void getDetectorModel(std::string& det_model);
 
@@ -140,6 +139,27 @@ namespace lima
     };
 
     /*******************************************************************
+     * \class RoiCtrlObj
+     * \brief Control object providing Basler Roi interface
+     *******************************************************************/
+    
+    class RoiCtrlObj : public HwRoiCtrlObj
+    {
+      DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "MarCCD");
+      
+    public:
+      RoiCtrlObj(Camera& cam);
+      virtual ~RoiCtrlObj();
+      
+      virtual void setRoi(const Roi& set_roi);
+      virtual void getRoi(Roi& hw_roi);
+      virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
+      
+    private:
+      Camera& m_cam;
+    };
+    
+    /*******************************************************************
      * \class BinCtrlObj
      * \brief Control object providing MarCCD Bin interface
      *******************************************************************/
@@ -152,7 +172,7 @@ namespace lima
       virtual void setBin(const Bin& bin);
       virtual void getBin(Bin& bin);
       //allow all binning
-      virtual void checkBin(Bin& ); //{}
+      virtual void checkBin(Bin& bin); //{}
     private:
       Camera& m_cam;
     };
@@ -201,12 +221,12 @@ namespace lima
       int* getHeader(void);
 	
       //- Reader task timeout to process image from file
-      //void setTimeout(int TO);
+      void setTimeout(int TO);
 	
       //- get MARCCD image from file
-      //void enableReader(void);
+      void enableReader(void);
       //- get a simulated image
-      //void disableReader(void);
+      void disableReader(void);
 	
     private:
       Camera&        m_cam;
@@ -214,6 +234,7 @@ namespace lima
       DetInfoCtrlObj m_det_info;
       BufferCtrlObj  m_buffer;
       SyncCtrlObj    m_sync;
+      RoiCtrlObj      m_roi;
       BinCtrlObj     m_bin;
 
     };

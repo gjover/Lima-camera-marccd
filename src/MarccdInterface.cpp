@@ -77,10 +77,10 @@ void DetInfoCtrlObj::setCurrImageType(ImageType image_type)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void DetInfoCtrlObj::getPixelSize(double& size)
+void DetInfoCtrlObj::getPixelSize(double& x_size,double& y_size)
 {
   DEB_MEMBER_FUNCT();
-  m_cam.getPixelSize(size);
+  m_cam.getPixelSize(x_size,y_size);
 }
 
 //-----------------------------------------------------
@@ -326,6 +326,7 @@ void BufferCtrlObj::enableReader(void)
 {
     DEB_MEMBER_FUNCT();
 	m_reader->enableReader();
+std::cout << "\t\tBufferCtrlObj::enableReader(void) -> DONE" << std::endl;
 }
 
 //-----------------------------------------------------
@@ -335,6 +336,7 @@ void BufferCtrlObj::disableReader(void)
 {
     DEB_MEMBER_FUNCT();
 	m_reader->disableReader();
+std::cout << "\t\tBufferCtrlObj::disableReader(void) -> DONE" << std::endl;
 }
 
 int* BufferCtrlObj::getHeader()
@@ -473,6 +475,53 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 	valid_ranges.max_lat_time = max_time;
 }
 
+/*******************************************************************
+ * \brief RoiCtrlObj constructor
+ *******************************************************************/
+RoiCtrlObj::RoiCtrlObj(Camera& cam)
+    : m_cam(cam)
+{
+    DEB_CONSTRUCTOR();
+    
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+RoiCtrlObj::~RoiCtrlObj()
+{
+    DEB_DESTRUCTOR();
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
+{
+    DEB_MEMBER_FUNCT();
+    m_cam.checkRoi(set_roi, hw_roi);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void RoiCtrlObj::setRoi(const Roi& roi)
+{
+    DEB_MEMBER_FUNCT();
+    Roi real_roi;
+    checkRoi(roi,real_roi);
+    m_cam.setRoi(real_roi);
+
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void RoiCtrlObj::getRoi(Roi& roi)
+{
+    DEB_MEMBER_FUNCT();
+    m_cam.getRoi(roi);
+}
 
 /*******************************************************************
  * \brief BinCtrlObj constructor
@@ -524,7 +573,7 @@ void BinCtrlObj::checkBin(Bin& bin)
  *******************************************************************/
 
 Interface::Interface(Camera& cam)
-	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam),m_bin(cam)
+	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam),m_roi(cam), m_bin(cam)
 {
   DEB_CONSTRUCTOR();
   
@@ -541,7 +590,10 @@ Interface::Interface(Camera& cam)
   
   HwSyncCtrlObj *sync = &m_sync;
   m_cap_list.push_back(HwCap(sync));
-  
+
+  HwRoiCtrlObj *roi = &m_roi;
+  m_cap_list.push_back(HwCap(roi));
+
   HwBinCtrlObj *bin = &m_bin;
   m_cap_list.push_back(HwCap(bin));
   
@@ -832,3 +884,29 @@ int* Interface::getHeader(void)
   return m_buffer.getHeader();
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setTimeout(int TO)
+{
+    DEB_MEMBER_FUNCT();
+    m_buffer.setTimeout(TO);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::enableReader(void)
+{
+	m_buffer.enableReader();
+std::cout << "\tInterface::enableReader(void) -> DONE" << std::endl;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::disableReader(void)
+{
+	m_buffer.disableReader();
+std::cout << "\tInterface::disableReader(void) -> DONE" << std::endl;
+}

@@ -95,7 +95,8 @@ Camera::Camera(const std::string& camera_ip,
   _detector_type(""),
   _stop_sequence_finished(false),
   _abort(false),
-  _bgAcquired(false)
+  _bgAcquired(false),
+  _error("")
 {
   DEB_CONSTRUCTOR();
   
@@ -202,10 +203,14 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 		_sock = new yat::ClientSocket ();
 		//- connect to MARCCD device
 		this->connect();
+		//- no error
+		this->_error.clear();
 	      }
 	    catch (yat::Exception &ye)
 	      {
 		this->enable_periodic_msg(false);
+		//- update error
+		this->_error = ye.errors[0].desc;
 		//this->status_str = "Camera::Camera : device initialization failed caught DevFailed trying to create yat::Socket\n";
 		if ( _sock )
 		  delete _sock;
@@ -231,6 +236,13 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 	      {
 		this->enable_periodic_msg(true);
 		this->set_periodic_msg_period( kPERIODIC_MSG_PERIOD );
+
+		//- get image size to initialize ROI
+		Size size;
+		this->getImageSize(size);
+		std::cout << "Set the ROI to full frame" << std::endl;
+		Roi aFullFrame(0,0,size.getWidth(),size.getHeight());
+		this->setRoi(aFullFrame);
 	      }
 	    else
 	      {
@@ -483,7 +495,17 @@ void Camera::take_background_frame()
 //---------------------------
 void Camera::prepare()
 {
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
 
+	//- Method to take a backround image. This background will be substacted to each
+	//-  taken images !
+	//- TODO periodically ?! If so, period(in ms) = ?
+
+	//- SEQUENCE :
+	//- wait for marccd to not be reading
+
+	//- send readout 1
 }
 
 //-----------------------------------------------------
@@ -519,10 +541,10 @@ void Camera::getImageSize(Size& size)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getPixelSize(double& size)
+void Camera::getPixelSize(double& x_size,double& y_size)
 {
 	DEB_MEMBER_FUNCT();
-	size = PixelSize;
+	x_size = y_size = PixelSize;
 }
 
 //-----------------------------------------------------
@@ -710,6 +732,127 @@ void Camera::getFrameRate(double& frame_rate)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(set_roi);
+    hw_roi = set_roi;
+
+    DEB_RETURN() << DEB_VAR1(hw_roi);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setRoi(const Roi& set_roi)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(set_roi);
+    Roi r;    
+		try
+		{
+			//- backup old roi, in order to rollback if error
+			getRoi(r);
+			if(r == set_roi) return;
+
+			//- first reset the ROI
+			Size size;
+			this->getImageSize(size);
+
+			Roi fullFrame( 0,
+				0,
+				static_cast<int>(size.getWidth()),
+				static_cast<int>(size.getHeight())
+				);
+
+			if(set_roi.isActive() && fullFrame != set_roi)
+			{
+				//- then fix the new ROI
+				//Camera_->Width.SetValue( set_roi.getSize().getWidth());
+				//Camera_->Height.SetValue(set_roi.getSize().getHeight());
+				//Camera_->OffsetX.SetValue(set_roi.getTopLeft().x);
+				//Camera_->OffsetY.SetValue(set_roi.getTopLeft().y);
+			}
+		}
+		catch(...)
+		{
+			DEB_ERROR() << "Marccd::Camera::setRoi -> generic exception caught !";
+			throw LIMA_HW_EXC(Error, "Marccd::Camera::setRoi -> generic exception caught !");
+		}
+		//catch (GenICam::GenericException &e)
+		//{
+		//	try
+		//	{
+		//		//-  rollback the old roi
+		//		Camera_->Width.SetValue( r.getSize().getWidth());
+		//		Camera_->Height.SetValue(r.getSize().getHeight());
+		//		Camera_->OffsetX.SetValue(r.getTopLeft().x);
+		//		Camera_->OffsetY.SetValue(r.getTopLeft().y);
+		//		// Error handling
+		//	}
+		//	catch (GenICam::GenericException &e2)
+		//	{
+		//		DEB_ERROR() << e2.GetDescription();
+		//		throw LIMA_HW_EXC(Error,e2.GetDescription());
+		//	}
+		//	DEB_ERROR() << e.GetDescription();
+		//	throw LIMA_HW_EXC(Error, e.GetDescription());
+		//}        
+
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getRoi(Roi& hw_roi)
+{
+    DEB_MEMBER_FUNCT();
+		try
+		{
+			Size size;
+			//- get image size to set ROI max
+			this->getImageSize(size);
+			Roi  r( static_cast<int>(0),
+							static_cast<int>(0),
+							static_cast<int>(size.getWidth()),
+							static_cast<int>(size.getHeight())
+						);
+
+			hw_roi = r;
+		}
+		catch (...)
+		{
+			// Error handling
+			DEB_ERROR() << "Marccd::Camera::getRoi -> generic exception caught !";
+			throw LIMA_HW_EXC(Error, "Marccd::Camera::getRoi -> generic exception caught !");
+		}    
+    DEB_RETURN() << DEB_VAR1(hw_roi);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::checkBin(Bin& bin)
+{
+	int binX = bin.getX();
+	int binY = bin.getY();
+
+	if ( binX > 8 )
+		binX = 8;
+	else if ( binX < 1 )
+		binX = 1;
+	else if ( binY > 8 )
+		binY = 8;
+	else if ( binY < 1 )
+		binY = 1;
+
+	bin = Bin(binX, binY);
+  //DEB_RETURN() << DEB_VAR1(bin);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void Camera::setBinning(const Bin &bin)
 {
   std::stringstream bin_values;
@@ -744,6 +887,8 @@ void Camera::setBinning(const Bin &bin)
 //-----------------------------------------------------
 void Camera::getBinning(Bin& bin)
 {
+  
+  std::cout << "\n\t\tMarccdCamera::getBinning DONE -> ENTERING ..." << std::endl;
   DEB_MEMBER_FUNCT();
   
   if( !this->_sock )
@@ -1064,7 +1209,8 @@ std::string Camera::write_read(std::string cmd_to_send)
 	{
 	  //status = Camera::Fault;
 	  //std::cout << "Camera::write_read -> no _sock !" << std::endl;
-		throw;
+
+	  throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
 	}
 	
 	std::string response("");
@@ -1402,6 +1548,9 @@ void Camera::perform_abort_sequence()
 //-----------------------------------------------------
 void Camera::get_marccd_state()
 {
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+
 	std::string stateStr("");
 	//- get detector state string value
 	{

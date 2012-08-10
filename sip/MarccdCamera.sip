@@ -41,7 +41,7 @@ namespace Marccd
     void getImageSize(Size& size /Out/);
     //void setPixelDepth(ImageType pixel_depth);
     //void getPixelDepth(ImageType& pixel_depth /Out/);
-    void getPixelSize(double& size /Out/);
+    void getPixelSize(double& x_size /Out/,double& y_size /Out/);
     void getImageType(ImageType& type /Out/);
     
     void getDetectorType(std::string& type /Out/);
@@ -66,6 +66,7 @@ namespace Marccd
     
     void setBinning(const Bin&);
     void getBinning(Bin& /Out/);
+    void checkBin(Bin& /In,Out/);
     
     bool is_stop_sequence_finished();
     
