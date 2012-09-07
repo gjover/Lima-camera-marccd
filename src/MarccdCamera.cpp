@@ -1309,7 +1309,7 @@ void Camera::perform_acquisition_sequence()
 	  exposure.tv_nsec = now.tv_nsec + nsec;
 	  // Define when the latency time finish
 	  sec = (int) m_lat_time;
-	  nsec= (m_exp_time - sec)*1000000000;
+	  nsec= (m_lat_time - sec)*1000000000;
 	  if (nsec + exposure.tv_nsec >= 1000000000)
 	    {
 	      nsec -= 1000000000;
