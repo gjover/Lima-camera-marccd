@@ -26,8 +26,9 @@ class Interface : HwInterface
 	virtual int   getNbAcquiredFrames();
 	virtual int   getNbHwAcquiredFrames();
 
-	void  takeBackgroundFrame();
-	void  getFrameRate(double& frame_rate);
+	void takeBackgroundFrame();
+	void saveBG();
+	void getFrameRate(double& frame_rate);
 	
 	void setImageIndex(int imgIdx);
 	int  getImageIndex();		

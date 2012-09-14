@@ -113,6 +113,7 @@ namespace lima
 	void setImageIndex(int newImgIdx);
 	int getImageIndex() ;
 	int getFirstImage() ;
+	void saveBG(bool);
 
         void setBeamX(float);
         void setBeamY(float);
@@ -212,6 +213,7 @@ namespace lima
 	bool _abort;
 
 	bool _bgAcquired;
+	bool _saveBG;
       };
   } //- namespace Marccd
 } // namespace lima

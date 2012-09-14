@@ -96,6 +96,7 @@ Camera::Camera(const std::string& camera_ip,
   _stop_sequence_finished(false),
   _abort(false),
   _bgAcquired(false),
+  _saveBG(false),
   _error("")
 {
   DEB_CONSTRUCTOR();
@@ -1363,7 +1364,15 @@ void Camera::perform_acquisition_sequence()
 
 	case 6: //- Send readout cmd with a specific file name
 	  {
-	    std::string cmd_to_send("readout,0,");
+	    std::string cmd_to_send;
+	    if (!_saveBG)
+	      {
+		cmd_to_send = "readout,0,";
+	      }
+	    else
+	      {
+		cmd_to_send = "readout,1,";
+	      }
 	    this->_full_img_name = this->_image_path + this->_image_name 
 	      + "_" + yat::XString<size_t>::to_string(this->_image_number);
 	    cmd_to_send += this->_full_img_name;
@@ -1371,6 +1380,8 @@ void Camera::perform_acquisition_sequence()
 	    yat::MutexLock scoped_lock(this->_lock);
 	    clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&exposure,NULL); 
 	    this->write_read(cmd_to_send);
+
+	    _saveBG = false;
 	  }
 	  step++;
 	  break;
@@ -1411,6 +1422,7 @@ void Camera::perform_background_frame()
   
   //- wait for detector NOT be reading
   //std::cout << "Wait for READ + EXECUTING" << std::endl;
+
   do
     {
       this->get_marccd_state();
@@ -1428,6 +1440,7 @@ void Camera::perform_background_frame()
   
   //- Send readout 1 => read data into background frame storage
   std::string cmd_to_send("readout,1");
+  
   {
     yat::MutexLock scoped_lock(this->_lock);
     this->write_read(cmd_to_send);
@@ -1640,6 +1653,11 @@ int Camera::getImageIndex()
 int Camera::getFirstImage() 
 {
   return this->_first_image;
+}
+
+void Camera::saveBG(bool BG)
+{
+  _saveBG = BG;
 }
 
 //-----------------------------------------------------

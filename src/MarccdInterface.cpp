@@ -680,7 +680,16 @@ void Interface::stopAcq()
 void Interface::takeBackgroundFrame()
 {
   DEB_MEMBER_FUNCT();
-	m_cam.take_background_frame();
+  m_cam.take_background_frame();
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::saveBG()
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.saveBG(true);
 }
 
 //-----------------------------------------------------

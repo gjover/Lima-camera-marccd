@@ -200,6 +200,7 @@ namespace lima
       virtual int getNbHwAcquiredFrames();
 
       void takeBackgroundFrame();
+      void saveBG();
       void getFrameRate(double& frame_rate);
 	
       void setImageIndex(int imgIdx);
