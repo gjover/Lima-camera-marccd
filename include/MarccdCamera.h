@@ -119,6 +119,10 @@ namespace lima
         void setBeamY(float);
         void setDistance(float);
         void setWavelength(float);
+	float getBeamX();
+	float getBeamY();
+	float getDistance();
+	float getWavelength();
 	
       protected:
 	virtual void setMaxImageSizeCallbackActive(bool cb_active);	
@@ -206,6 +210,12 @@ namespace lima
 	size_t      _port_num;
 	std::string _detector_model;
 	std::string _detector_type;
+
+	// X-ray source header info
+	float sourceBeamX;
+	float sourceBeamY;
+	float sourceDistance;
+	float sourceWavelength;
 
 	//bool _stop_already_done;
 	std::string _error;

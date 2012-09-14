@@ -996,6 +996,7 @@ void Camera::setBeamX(float X)
       //- Error handling
       std::cerr << "MARCAM SET BEAM X -> An ... exception occurred!"  << std::endl;
     }
+  sourceBeamX = X;
 }
 
 //-----------------------------------------------------
@@ -1018,6 +1019,7 @@ void Camera::setBeamY(float Y)
       //- Error handling
       std::cerr << "MARCAM SET BEAM Y -> An ... exception occurred!"  << std::endl;
     }
+  sourceBeamY = Y;
 }
 
 //-----------------------------------------------------
@@ -1040,6 +1042,7 @@ void Camera::setDistance(float D)
       //- Error handling
       std::cerr << "MARCAM SET DISTANCE -> An ... exception occurred!"  << std::endl;
     }
+  sourceDistance = D;
 }
 
 //-----------------------------------------------------
@@ -1062,6 +1065,43 @@ void Camera::setWavelength(float W)
       //- Error handling
       std::cerr << "MARCAM SET WAVELENGTH -> An ... exception occurred!"  << std::endl;
     }
+  sourceWavelength = W;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Camera::getBeamX()
+{
+  DEB_MEMBER_FUNCT();
+  return sourceBeamX;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Camera::getBeamY()
+{
+  DEB_MEMBER_FUNCT();
+  return sourceBeamY;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Camera::getDistance()
+{
+  DEB_MEMBER_FUNCT();
+  return sourceDistance;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Camera::getWavelength()
+{
+  DEB_MEMBER_FUNCT();
+  return sourceWavelength;
 }
 
 //-----------------------------------------------------

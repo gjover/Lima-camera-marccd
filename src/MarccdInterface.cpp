@@ -885,6 +885,42 @@ void Interface::setWavelength(float W)
 }
 
 //-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Interface::getBeamX()
+{
+  DEB_MEMBER_FUNCT();
+  return m_cam.getBeamX();
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Interface::getBeamY()
+{
+  DEB_MEMBER_FUNCT();
+  return m_cam.getBeamY();
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Interface::getDistance()
+{
+  DEB_MEMBER_FUNCT();
+  return m_cam.getDistance();
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+float Interface::getWavelength()
+{
+  DEB_MEMBER_FUNCT();
+  return m_cam.getWavelength();
+}
+
+//-----------------------------------------------------
 // get last buffer header
 //-----------------------------------------------------
 int* Interface::getHeader(void)

@@ -45,6 +45,10 @@ class Interface : HwInterface
         void setBeamY(float);
         void setDistance(float);
         void setWavelength(float);
+        float getBeamX();
+        float getBeamY();
+        float getDistance();
+        float getWavelength();
 
 	SIP_PYDICT getHeader();	
 %MethodCode
