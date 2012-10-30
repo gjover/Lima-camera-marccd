@@ -842,7 +842,7 @@ void Camera::checkBin(Bin& bin)
 		binX = 8;
 	else if ( binX < 1 )
 		binX = 1;
-	else if ( binY > 8 )
+	if ( binY > 8 )
 		binY = 8;
 	else if ( binY < 1 )
 		binY = 1;
