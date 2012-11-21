@@ -1,9 +1,11 @@
 #include <yat/threading/Mutex.h>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <math.h>
 #include <time.h>
+#include <sys/stat.h>
 #include "Debug.h"
 #include "Constants.h"
 #include "Data.h"
@@ -35,13 +37,13 @@ Reader::Reader(Camera& cam, HwBufferCtrlObj& buffer_ctrl)
                      0)),      //- user data (same for all msgs) - we don't use it here
         _cam(cam),
         _buffer(buffer_ctrl),
-	_image_number(0),
-	_currentImgFileName(""),
-	_simulated_image(0),
-	_is_reader_open_image_file(true),  //- read image from file (no simulated image)
-	_tmOut(0)
+				_image_number(0),
+				_currentImgFileName(""),
+				_simulated_image(0),
+				_is_reader_open_image_file(true),	//- read image from file (no simulated image)
+				_tmOut(0)
 {
-  DEB_CONSTRUCTOR();
+	DEB_CONSTRUCTOR();
 }
 
 //---------------------------
@@ -62,23 +64,23 @@ Reader::~Reader()
 //---------------------------
 void Reader::start()
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   
-  try
-    {
+	try
+	{
       double eTime, lTime;
       this->_cam.getExpTime(eTime);
       this->_cam.getLatTime(lTime);
       this->setTimeout( kDEFAULT_READER_TIMEOUT_SEC + eTime + lTime);
 
-      this->post(new yat::Message(MARCCD_START_MSG), kPOST_MSG_TMO);
-    }
-  catch (Exception &e)
-    {
-      // Error handling
-      DEB_ERROR() << e.getErrMsg();
-      throw LIMA_HW_EXC(Error, e.getErrMsg());
-    }
+		this->post(new yat::Message(MARCCD_START_MSG), kPOST_MSG_TMO);
+	}
+	catch (Exception &e)
+	{
+		// Error handling
+		DEB_ERROR() << e.getErrMsg();
+		throw LIMA_HW_EXC(Error, e.getErrMsg());
+	}
   
 }
 
@@ -87,19 +89,19 @@ void Reader::start()
 //---------------------------
 void Reader::reset()
 {
-  DEB_MEMBER_FUNCT();
-  try
-    {  
+	DEB_MEMBER_FUNCT();
+	try
+	{     
       //- disable timeout
       this->_tmOut->disable();
-      this->post(new yat::Message(MARCCD_RESET_MSG), kPOST_MSG_TMO);
-    }
-  catch (Exception &e)
-    {
-      // Error handling
-      DEB_ERROR() << e.getErrMsg();
-      throw LIMA_HW_EXC(Error, e.getErrMsg());
-    }
+		this->post(new yat::Message(MARCCD_RESET_MSG), kPOST_MSG_TMO);
+	}
+	catch (Exception &e)
+	{
+		// Error handling
+		DEB_ERROR() << e.getErrMsg();
+		throw LIMA_HW_EXC(Error, e.getErrMsg());
+	}
   
 }
 
@@ -144,13 +146,13 @@ bool Reader::isRunning(void)
 //-----------------------------------------------------
 void Reader::setTimeout(double newTimeOutVal)
 {
-  DEB_MEMBER_FUNCT();
-  DEB_PARAM() << DEB_VAR1(newTimeOutVal);
-  yat::MutexLock scoped_lock(_lock);
-  if ( this->_tmOut )
-    this->_tmOut->set_value(newTimeOutVal);
-  else
-    throw LIMA_HW_EXC(Error, "Reader initialisation failed : cannot set new timeout value.");
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(newTimeOutVal);
+	yat::MutexLock scoped_lock(_lock);
+	if ( this->_tmOut )
+		this->_tmOut->set_value(newTimeOutVal);
+	else
+		throw LIMA_HW_EXC(Error, "Reader initialisation failed : cannot set new timeout value.");
 }
 
 //-----------------------------------------------------
@@ -158,9 +160,9 @@ void Reader::setTimeout(double newTimeOutVal)
 //-----------------------------------------------------
 void Reader::enableReader(void)
 {
-  DEB_MEMBER_FUNCT();
-  yat::MutexLock scoped_lock(_lock);
-  this->_is_reader_open_image_file = true;
+	DEB_MEMBER_FUNCT();
+	yat::MutexLock scoped_lock(_lock);
+	this->_is_reader_open_image_file = true;
 }
 
 //-----------------------------------------------------
@@ -168,9 +170,9 @@ void Reader::enableReader(void)
 //-----------------------------------------------------
 void Reader::disableReader(void)
 {
-  DEB_MEMBER_FUNCT();
-  yat::MutexLock scoped_lock(_lock);
-  this->_is_reader_open_image_file = false;
+	DEB_MEMBER_FUNCT();
+	yat::MutexLock scoped_lock(_lock);
+	this->_is_reader_open_image_file = false;
 }
 
 //-----------------------------------------------------
@@ -196,50 +198,50 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	    << ")\n";
   
   try
+  {
+    switch ( msg.type() )
     {
-      switch ( msg.type() )
-	{
-	  //-----------------------------------------------------    
-	case yat::TASK_INIT:
-	  {
-	    DEB_TRACE() <<"Reader::->TASK_INIT";
-	    //- create timeout
-	    this->_tmOut = new yat::Timeout();
-	    //- set unit in seconds
-	    this->_tmOut->set_unit(yat::Timeout::TMO_UNIT_SEC);
-	    //- set default timeout value
-	    this->_tmOut->set_value(kDEFAULT_READER_TIMEOUT_SEC);
-	  }
-	  break;
-	  //-----------------------------------------------------    
-	case yat::TASK_EXIT:
-	  {
-	    DEB_TRACE() <<"Reader::->TASK_EXIT";
-	  }
-	  break;
-	  //-----------------------------------------------------    
-	case yat::TASK_TIMEOUT:
-	  {
-	    DEB_TRACE() <<"Reader::->TASK_TIMEOUT";
-	  }
-	  break;
-	  //-----------------------------------------------------    
-	case yat::TASK_PERIODIC:
-	  {
-	    DEB_TRACE() << "Reader::->TASK_PERIODIC";
+      //-----------------------------------------------------    
+      case yat::TASK_INIT:
+      {
+        DEB_TRACE() <<"Reader::->TASK_INIT";
+				//- create timeout
+				this->_tmOut = new yat::Timeout();
+				//- set unit in seconds
+				this->_tmOut->set_unit(yat::Timeout::TMO_UNIT_SEC);
+				//- set default timeout value
+				this->_tmOut->set_value(kDEFAULT_READER_TIMEOUT_SEC);
+      }
+      break;
+      //-----------------------------------------------------    
+      case yat::TASK_EXIT:
+      {
+        DEB_TRACE() <<"Reader::->TASK_EXIT";
+      }
+      break;
+      //-----------------------------------------------------    
+      case yat::TASK_TIMEOUT:
+      {
+        DEB_TRACE() <<"Reader::->TASK_TIMEOUT";
+      }
+      break;
+      //-----------------------------------------------------    
+      case yat::TASK_PERIODIC:
+      {
+				DEB_TRACE() <<"Reader::->TASK_PERIODIC";
 	    //std::cout   << "Reader::->TASK_PERIODIC" << std::endl;
 	    
-	    //- check if timeout expired
-	    if ( this->_tmOut->expired() )
-	      {
-		DEB_TRACE() << "FATAL::Failed to load image : timeout expired !";
+				//- check if timeout expired
+				if ( this->_tmOut->expired() )
+				{
+					DEB_TRACE() << "FATAL::Failed to load image : timeout expired !";
 		//std::cout << "FATAL::Failed to load image : timeout expired !" 
 		//	  << std::endl;
 		
-		//- disable periodic msg
-		this->enable_periodic_msg(false);
-		return;
-	      }
+					//- disable periodic msg
+					this->enable_periodic_msg(false);
+					return;
+				}
 
 	    //- get full image name as full/path/imgName_idx
 	    std::stringstream newFileName;
@@ -257,11 +259,11 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 	      ;
 	    system(lsCommand.str().c_str());
 
-	    //- check if file exist	  
+				//- check if file exist
 	    std::ifstream imgFile(newFileName.str().c_str());
 
 	    if ( imgFile && this->_currentImgFileName != newFileName.str())
-	      {
+				{
 		clock_gettime(CLOCK_MONOTONIC,&now);
 		std::cout << "Buffer File found." << " (t " 
 		  //<< (now.tv_sec + (double) now.tv_nsec/1000000000 )
@@ -271,7 +273,7 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 		//std::cout << "\t\t\t Reader: File [" << newFileName.str()
 		//	  << "] exist ..." << std::endl;
 
-		//- read image file
+					//- read image file
 		bool ready = this->getImageFromFile();
 		clock_gettime(CLOCK_MONOTONIC,&now);
 		std::cout << "Buffer Ready: " << ready << " (t " 
@@ -290,43 +292,43 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 		else 
 		  {
 		    //std::cout << "Reader: All images read." << std::endl;
-		    //- disable periodic msg
+					//- disable periodic msg
 		    this->_tmOut->disable();
-		    this->enable_periodic_msg(false);
+					this->enable_periodic_msg(false);
 		  }
 		
 		//std::cout << "\t\t\t Reader::->TASK_PERIODIC ... DONE !!!" << std::endl;
-	      }
-	    else 
-	      { 
+				}
+				else 
+				{ 
 		// Fix possible _image_number de-synchronization at START
 		if (this->_cam.getFirstImage() >  _image_number )
 		  _image_number = this->_cam.getFirstImage();
 		//std::cout << "\t\t\t Reader::->imgFile DOES NOT exist ..." << std::endl;
-	      }
-	  }
-	  break;
-	  //-----------------------------------------------------    
-	case MARCCD_START_MSG:    
-	  {
-	    DEB_TRACE() << "Reader::->MARCCD_START_MSG";
+				}
+			}
+      break;
+      //-----------------------------------------------------    
+      case MARCCD_START_MSG:    
+      {
+        DEB_TRACE() << "Reader::->MARCCD_START_MSG";
 	    //std::cout   << "Reader::->MARCCD_START_MSG" << std::endl;
-	    //- enable periodic msg
-	    this->enable_periodic_msg(true);
+		//- enable periodic msg
+        	this->enable_periodic_msg(true);
 	    // Next image we are waiting for
 	    this->_image_number = this->_cam.getFirstImage();
-	    //- re-arm timeout
-	    this->_tmOut->restart();
+		//- re-arm timeout
+		this->_tmOut->restart();
 	    this->_currentImgFileName = string("");
 	    //std::cout << "\t\t\t Reader::->MARCCD_START_MSG DONE for image name : " << this->_currentImgFileName << std::endl;
-	  }
-	  break;
-	  //-----------------------------------------------------
-	case MARCCD_RESET_MSG:
-	  {
-	    DEB_TRACE() << "Reader::->MARCCD_RESET_MSG";
+      }
+      break;
+      //-----------------------------------------------------
+      case MARCCD_RESET_MSG:
+      {
+        DEB_TRACE() << "Reader::->MARCCD_RESET_MSG";
 	    //std::cout   << "Reader::->MARCCD_RESET_MSG" << std::endl;
-	    this->enable_periodic_msg(false);
+        this->enable_periodic_msg(false);
 	    this->_image_number = this->_cam.getImageIndex();
 	    // Clean buffer
 	    std::stringstream rmCommand;
@@ -334,28 +336,29 @@ void Reader::handle_message( yat::Message& msg )  throw( yat::Exception )
 		       << this->_cam.getImageFileName()
 		       << "_* >& /dev/null" ; // avoid print out
 	    system(rmCommand.str().c_str());
-	  }
-	  break;    
-	  //-----------------------------------------------------
-	}
+      }
+      break;    
+      //-----------------------------------------------------
     }
+  }
   catch( yat::Exception& ex )
-    {
-      DEB_ERROR() <<"Error : " << ex.errors[0].desc;
-      throw;
-    }
+  {
+    DEB_ERROR() <<"Error : " << ex.errors[0].desc;
+    throw;
+  }
 }
 //-----------------------------------------------------
 bool Reader::getImageFromFile ()
-{  
+{
+  DEB_MEMBER_FUNCT();
 
   StdBufferCbMgr& buffer_mgr = ((reinterpret_cast<BufferCtrlObj&>(this->_buffer)).getBufferCbMgr());
-
+	
   // Buffer manager is very strict with the data pointer, 
   // it will accept only its own pointer address
   int frameNumber = this->_image_number - this->_cam.getFirstImage();
   void *ptr = buffer_mgr.getFrameBufferPtr(frameNumber);
-
+  
   buffer_mgr.setStartTimestamp(Timestamp::now());
 
   HwFrameInfoType frame_info;
@@ -364,49 +367,50 @@ bool Reader::getImageFromFile ()
   // Read data buffer from file
   char filename[this->_currentImgFileName.size() + 1];
   strcpy(filename,this->_currentImgFileName.c_str());
-  DI::DiffractionImage *tmpDI = new DI::DiffractionImage(filename);
 
-  //Check that the image size corresponds with the expected frame size
-  Size frameSize = buffer_mgr.getFrameDim(). getSize();
-  if( frameSize.getWidth()  != tmpDI->getWidth() ||
-      frameSize.getHeight() != tmpDI->getHeight())
-    throw LIMA_HW_EXC(Error, "Image size in file is different from the expected image size of this detector !");
-  
-  // Copy data buffer without modifying the pointer
-  int img_size = tmpDI->getWidth() * tmpDI->getHeight();
-  unsigned int *image = tmpDI->getImage();	
-  for(int j=0;j<img_size;j++)
-    {
-      ((uint16_t*)ptr)[j] = image[j];
-    }
-
-  // Read header info
-  
   FILE * file;
-  MARCCD_HEADER header;
-  //std::fill_n((int *)header, 768, 0);
   file = fopen(filename, "rb");
   if (file != NULL)
-    {
+  {
+      Size frameSize = buffer_mgr.getFrameDim().getSize();
+      int frameMemSize = buffer_mgr.getFrameDim().getMemSize();
+      struct stat st;
+      MARCCD_HEADER header;
+
+      //Check that the image size corresponds with the expected frame size
+      // MARCCD format is TIFF header (1k) + MARCCD_HEADER (3k)+ RAW data (16bit depth)
+      if(fstat(fileno(file),&st)!=1)
+      {
+	  fclose(file);
+	  throw LIMA_HW_EXC(Error, "Cannot access image file status !");
+      }
+      if (st.st_size != (int)(sizeof(MARCCD_HEADER)+1024+frameMemSize))
+      {
+	  fclose(file);
+	  throw LIMA_HW_EXC(Error, "Image size in file is different from the expected image size of this detector !");
+      }
+      //get the frame_header
       fseek(file, 1024, SEEK_SET);
       if (fread(&header, sizeof(MARCCD_HEADER), 1, file) == 1)
-	{
+      {
 	  //if (hccd.header_byte_order < 1234 || hccd.header_byte_order > 4321)
 	  //  swaplong((void *) &hccd, sizeof(MARCCD_HEADER));
 	  hccd.header = header;
-	}
-      
+      } 
+      else 
+      {
+	  fclose(file);
+	  throw LIMA_HW_EXC(Error, "Error reading the MARCCD_HEADER from file !");
+      }
+      //now the raw data !!!
+      if(fread(ptr,frameMemSize, 1, file) !=1)
+      {
+	  fclose(file);
+	  throw LIMA_HW_EXC(Error, "Error reading the from file !");
+      }
       fclose(file);
-    }
-  /*
-  std::cout << "Reader header: ";
-  for (int i=64; i<70;i++)
-    std::cout << " (" << hccd.data[i] << ")";
-  std::cout << "|\n";
-  */
-  delete tmpDI;
-
-  //std::cout << "\t\t\tnew frame ready" << std::endl; 
+  }
+  
   return buffer_mgr.newFrameReady(frame_info);  
 }
 

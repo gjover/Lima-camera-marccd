@@ -71,7 +71,7 @@ void DetInfoCtrlObj::setCurrImageType(ImageType image_type)
   ImageType valid_image_type;
   getDefImageType(valid_image_type);
   if (image_type != valid_image_type)
-    THROW_HW_ERROR(Error) << "Cannot change to "  << DEB_VAR2(image_type, valid_image_type);
+  THROW_HW_ERROR(Error) << "Cannot change to "  << DEB_VAR2(image_type, valid_image_type);
 }
 
 //-----------------------------------------------------
@@ -135,7 +135,7 @@ BufferCtrlObj::BufferCtrlObj(Camera& cam)
       m_buffer_ctrl_mgr(m_buffer_cb_mgr),
       m_cam(cam)
 {
-  DEB_CONSTRUCTOR();
+	DEB_CONSTRUCTOR();
   m_reader = new Reader(cam,*this);
   m_reader->go(2000);  
 }
@@ -145,7 +145,7 @@ BufferCtrlObj::BufferCtrlObj(Camera& cam)
 //-----------------------------------------------------
 BufferCtrlObj::~BufferCtrlObj()
 {
-  DEB_DESTRUCTOR();
+	DEB_DESTRUCTOR();
   m_reader->reset();
   m_reader->exit();  
 }
@@ -155,7 +155,7 @@ BufferCtrlObj::~BufferCtrlObj()
 //-----------------------------------------------------
 void BufferCtrlObj::setFrameDim(const FrameDim& frame_dim)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
     m_buffer_ctrl_mgr.setFrameDim(frame_dim);
 }
 
@@ -164,8 +164,8 @@ void BufferCtrlObj::setFrameDim(const FrameDim& frame_dim)
 //-----------------------------------------------------
 void BufferCtrlObj::getFrameDim(FrameDim& frame_dim)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.getFrameDim(frame_dim);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.getFrameDim(frame_dim);
 }
 
 //-----------------------------------------------------
@@ -173,8 +173,8 @@ void BufferCtrlObj::getFrameDim(FrameDim& frame_dim)
 //-----------------------------------------------------
 void BufferCtrlObj::setNbBuffers(int nb_buffers)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.setNbBuffers(nb_buffers);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.setNbBuffers(nb_buffers);
 }
 
 //-----------------------------------------------------
@@ -182,8 +182,8 @@ void BufferCtrlObj::setNbBuffers(int nb_buffers)
 //-----------------------------------------------------
 void BufferCtrlObj::getNbBuffers(int& nb_buffers)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.getNbBuffers(nb_buffers);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.getNbBuffers(nb_buffers);
 }
 
 //-----------------------------------------------------
@@ -191,8 +191,8 @@ void BufferCtrlObj::getNbBuffers(int& nb_buffers)
 //-----------------------------------------------------
 void BufferCtrlObj::setNbConcatFrames(int nb_concat_frames)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.setNbConcatFrames(nb_concat_frames);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.setNbConcatFrames(nb_concat_frames);
 }
 
 //-----------------------------------------------------
@@ -200,8 +200,8 @@ void BufferCtrlObj::setNbConcatFrames(int nb_concat_frames)
 //-----------------------------------------------------
 void BufferCtrlObj::getNbConcatFrames(int& nb_concat_frames)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.getNbConcatFrames(nb_concat_frames);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.getNbConcatFrames(nb_concat_frames);
 }
 
 //-----------------------------------------------------
@@ -209,7 +209,7 @@ void BufferCtrlObj::getNbConcatFrames(int& nb_concat_frames)
 //-----------------------------------------------------
 void BufferCtrlObj::getMaxNbBuffers(int& max_nb_buffers)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   m_buffer_ctrl_mgr.getMaxNbBuffers(max_nb_buffers);
 }
 
@@ -218,7 +218,7 @@ void BufferCtrlObj::getMaxNbBuffers(int& max_nb_buffers)
 //-----------------------------------------------------
 void *BufferCtrlObj::getBufferPtr(int buffer_nb, int concat_frame_nb)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   return m_buffer_ctrl_mgr.getBufferPtr(buffer_nb, concat_frame_nb);
 }
 
@@ -227,7 +227,7 @@ void *BufferCtrlObj::getBufferPtr(int buffer_nb, int concat_frame_nb)
 //-----------------------------------------------------
 void *BufferCtrlObj::getFramePtr(int acq_frame_nb)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   return m_buffer_ctrl_mgr.getFramePtr(acq_frame_nb);
 }
 
@@ -236,8 +236,8 @@ void *BufferCtrlObj::getFramePtr(int acq_frame_nb)
 //-----------------------------------------------------
 void BufferCtrlObj::getStartTimestamp(Timestamp& start_ts)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.getStartTimestamp(start_ts);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.getStartTimestamp(start_ts);
 }
 
 //-----------------------------------------------------
@@ -245,8 +245,8 @@ void BufferCtrlObj::getStartTimestamp(Timestamp& start_ts)
 //-----------------------------------------------------
 void BufferCtrlObj::getFrameInfo(int acq_frame_nb, HwFrameInfoType& info)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.getFrameInfo(acq_frame_nb, info);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.getFrameInfo(acq_frame_nb, info);
 }
 
 //-----------------------------------------------------
@@ -254,8 +254,8 @@ void BufferCtrlObj::getFrameInfo(int acq_frame_nb, HwFrameInfoType& info)
 //-----------------------------------------------------
 void BufferCtrlObj::registerFrameCallback(HwFrameCallback& frame_cb)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.registerFrameCallback(frame_cb);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.registerFrameCallback(frame_cb);
 }
 
 //-----------------------------------------------------
@@ -263,8 +263,8 @@ void BufferCtrlObj::registerFrameCallback(HwFrameCallback& frame_cb)
 //-----------------------------------------------------
 void BufferCtrlObj::unregisterFrameCallback(HwFrameCallback& frame_cb)
 {
-  DEB_MEMBER_FUNCT();
-        m_buffer_ctrl_mgr.unregisterFrameCallback(frame_cb);
+	DEB_MEMBER_FUNCT();
+	m_buffer_ctrl_mgr.unregisterFrameCallback(frame_cb);
 }
 
 //-----------------------------------------------------
@@ -384,10 +384,10 @@ bool SyncCtrlObj::checkTrigMode(TrigMode trig_mode)
 //-----------------------------------------------------
 void SyncCtrlObj::setTrigMode(TrigMode trig_mode)
 {
-  DEB_MEMBER_FUNCT();    
-  if (!checkTrigMode(trig_mode))
-    THROW_HW_ERROR(InvalidValue) << "Invalid " << DEB_VAR1(trig_mode);
-  m_cam.setTrigMode(trig_mode);
+	DEB_MEMBER_FUNCT();    
+	if (!checkTrigMode(trig_mode))
+		THROW_HW_ERROR(InvalidValue) << "Invalid " << DEB_VAR1(trig_mode);
+	m_cam.setTrigMode(trig_mode);
 }
 
 //-----------------------------------------------------
@@ -403,7 +403,7 @@ void SyncCtrlObj::getTrigMode(TrigMode& trig_mode)
 //-----------------------------------------------------
 void SyncCtrlObj::setExpTime(double exp_time)
 {
-  m_cam.setExpTime(exp_time);
+	m_cam.setExpTime(exp_time);
 }
 
 //-----------------------------------------------------
@@ -419,7 +419,7 @@ void SyncCtrlObj::getExpTime(double& exp_time)
 //-----------------------------------------------------
 void SyncCtrlObj::setLatTime(double lat_time)
 {
-	m_cam.setLatTime(lat_time); 
+	m_cam.setLatTime(lat_time);
 }
 
 //-----------------------------------------------------
@@ -575,27 +575,27 @@ void BinCtrlObj::checkBin(Bin& bin)
 Interface::Interface(Camera& cam)
 	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam),m_roi(cam), m_bin(cam)
 {
-  DEB_CONSTRUCTOR();
-  
+	DEB_CONSTRUCTOR();
+
   //std::cout   << "Interface::Interface - ENTERING" << std::endl;
   
   //run the cammera
   m_cam.go(2000);
 
-  HwDetInfoCtrlObj *det_info = &m_det_info;
-  m_cap_list.push_back(HwCap(det_info));
-  
-  HwBufferCtrlObj *buffer = &m_buffer;
-  m_cap_list.push_back(HwCap(buffer));
-  
-  HwSyncCtrlObj *sync = &m_sync;
-  m_cap_list.push_back(HwCap(sync));
+	HwDetInfoCtrlObj *det_info = &m_det_info;
+	m_cap_list.push_back(HwCap(det_info));
 
-  HwRoiCtrlObj *roi = &m_roi;
-  m_cap_list.push_back(HwCap(roi));
+	HwBufferCtrlObj *buffer = &m_buffer;
+	m_cap_list.push_back(HwCap(buffer));
+	
+	HwSyncCtrlObj *sync = &m_sync;
+	m_cap_list.push_back(HwCap(sync));
+			
+	HwRoiCtrlObj *roi = &m_roi;
+	m_cap_list.push_back(HwCap(roi));
 
-  HwBinCtrlObj *bin = &m_bin;
-  m_cap_list.push_back(HwCap(bin));
+	HwBinCtrlObj *bin = &m_bin;
+	m_cap_list.push_back(HwCap(bin));
   
   m_cam.stop();
   m_buffer.reset();
@@ -608,7 +608,7 @@ Interface::Interface(Camera& cam)
 //-----------------------------------------------------
 Interface::~Interface()
 {
-  DEB_DESTRUCTOR();
+	DEB_DESTRUCTOR();
 }
 
 //-----------------------------------------------------
@@ -616,7 +616,7 @@ Interface::~Interface()
 //-----------------------------------------------------
 void Interface::getCapList(HwInterface::CapList &cap_list) const
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
 	cap_list = m_cap_list;
 }
 
@@ -625,8 +625,8 @@ void Interface::getCapList(HwInterface::CapList &cap_list) const
 //-----------------------------------------------------
 void Interface::reset(ResetLevel reset_level)
 {
-  DEB_MEMBER_FUNCT();
-  DEB_PARAM() << DEB_VAR1(reset_level);
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(reset_level);
 
   //stopAcq();
 
@@ -648,9 +648,9 @@ void Interface::reset(ResetLevel reset_level)
 //-----------------------------------------------------
 void Interface::prepareAcq()
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   m_buffer.reset();
-  m_cam.prepare();
+	m_cam.prepare();
 }
 
 //-----------------------------------------------------
@@ -658,8 +658,8 @@ void Interface::prepareAcq()
 //-----------------------------------------------------
 void Interface::startAcq()
 {
-  DEB_MEMBER_FUNCT();
-  m_cam.start();
+	DEB_MEMBER_FUNCT();
+	m_cam.start();
   m_buffer.update_image_from_file(); 
 }
 
@@ -668,8 +668,8 @@ void Interface::startAcq()
 //-----------------------------------------------------
 void Interface::stopAcq()
 {
-  DEB_MEMBER_FUNCT();
-  m_cam.stop();
+	DEB_MEMBER_FUNCT();
+	m_cam.stop();
   m_buffer.reset();
   //m_buffer.update_image_from_file();    
 }
@@ -679,8 +679,8 @@ void Interface::stopAcq()
 //-----------------------------------------------------
 void Interface::takeBackgroundFrame()
 {
-  DEB_MEMBER_FUNCT();
-  m_cam.take_background_frame();
+	DEB_MEMBER_FUNCT();
+	m_cam.take_background_frame();
 }
 
 //-----------------------------------------------------
@@ -697,63 +697,63 @@ void Interface::saveBG()
 //-----------------------------------------------------
 void Interface::getStatus(StatusType& status)
 {
-  Camera::Status marccd_status = Camera::Unknown;
-  
-  
-  ////std::cout << "\t***** Interface::getStatus -> MARCCD status = " << marccd_status << std::endl;
-  
+	Camera::Status marccd_status = Camera::Unknown;
+	
+
+////std::cout << "\t***** Interface::getStatus -> MARCCD status = " << marccd_status << std::endl;
+
   int nb_frames;
   m_cam.getNbFrames(nb_frames);
 
-  if( this->m_buffer.isRunning() )
-    {
-      status.acq = AcqRunning;
-      status.det = DetExposure;
-    }
+	if( this->m_buffer.isRunning() )
+	{
+		status.acq = AcqRunning;
+		status.det = DetExposure;
+	}
   else if (m_buffer.isTimeoutSignaled())
     {
       status.acq = AcqFault;
       status.det = DetFault;
     }
-  else
-    {
-      m_cam.getStatus(marccd_status);
-      switch (marccd_status)
+	else
 	{
-	case Camera::Ready:
-	  status.acq = AcqReady;
-	  status.det = DetIdle;
-	  break;
-	  
-	case Camera::Exposure:
-	  status.acq = AcqRunning;
-	  status.det = DetExposure;
-	  break;
-	  
-	case Camera::Readout:
-	  status.acq = AcqRunning;
-	  status.det = DetReadout;
-	  break;
-	  
-	case Camera::Latency:
-	  status.acq = AcqRunning;
-	  status.det = DetLatency;
-	  break;
-	  
+		m_cam.getStatus(marccd_status);
+		switch (marccd_status)
+		{
+		case Camera::Ready:
+			status.acq = AcqReady;
+			status.det = DetIdle;
+			break;
+
+		case Camera::Exposure:
+			status.acq = AcqRunning;
+			status.det = DetExposure;
+			break;
+
+		case Camera::Readout:
+			status.acq = AcqRunning;
+			status.det = DetReadout;
+			break;
+
+		case Camera::Latency:
+			status.acq = AcqRunning;
+			status.det = DetLatency;
+			break;
+
 	case Camera::Config:
 	  status.acq = AcqConfig;
 	  status.det = DetFault;
 	  break;
 
-	case Camera::Unknown:
-	case Camera::Fault:
-	  status.acq = AcqFault;
-	  status.det = DetFault;
-	  break;
+		case Camera::Unknown:
+		case Camera::Fault:
+			status.acq = AcqFault;
+			status.det = DetFault;
+			break;
+		}
 	}
-    }
-  status.det_mask = DetExposure | DetReadout | DetLatency | DetFault;
-  /////std::cout << "\t***** Interface::getStatus -> StatusType = " << status.acq << std::endl;
+	status.det_mask = DetExposure | DetReadout | DetLatency | DetFault;
+/////std::cout << "\t***** Interface::getStatus -> StatusType = " << status.acq << std::endl;
 }
 
 //-----------------------------------------------------
@@ -771,7 +771,7 @@ int Interface::getNbAcquiredFrames()
 //-----------------------------------------------------
 int Interface::getNbHwAcquiredFrames()
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
 	int acq_frames = m_buffer.getLastAcquiredFrame();
 	return acq_frames;
 }
@@ -781,7 +781,7 @@ int Interface::getNbHwAcquiredFrames()
 //-----------------------------------------------------
 void Interface::getFrameRate(double& frame_rate)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
 	m_cam.getFrameRate(frame_rate);
 }
 
@@ -790,8 +790,8 @@ void Interface::getFrameRate(double& frame_rate)
 //-----------------------------------------------------
 void Interface::setImageFileName(const std::string& name)
 {
-  DEB_MEMBER_FUNCT();
-        m_cam.setImageFileName(name);
+	DEB_MEMBER_FUNCT();
+	m_cam.setImageFileName(name);
 }
 
 //-----------------------------------------------------
@@ -799,8 +799,8 @@ void Interface::setImageFileName(const std::string& name)
 //-----------------------------------------------------
 const std::string& Interface::getImageFileName(void)
 {
-  DEB_MEMBER_FUNCT();
-        return m_cam.getImageFileName();
+	DEB_MEMBER_FUNCT();
+	return m_cam.getImageFileName();
 }
 
 //-----------------------------------------------------
@@ -808,8 +808,8 @@ const std::string& Interface::getImageFileName(void)
 //-----------------------------------------------------
 void Interface::setImagePath(const std::string& path)
 {
-  DEB_MEMBER_FUNCT();
-        m_cam.setImagePath(path);
+	DEB_MEMBER_FUNCT();
+	m_cam.setImagePath(path);
 }
 
 //-----------------------------------------------------
@@ -817,8 +817,8 @@ void Interface::setImagePath(const std::string& path)
 //-----------------------------------------------------
 const std::string& Interface::getImagePath(void)
 {
-  DEB_MEMBER_FUNCT();
-        return m_cam.getImagePath();
+	DEB_MEMBER_FUNCT();
+	return m_cam.getImagePath();
 }
 
 //-----------------------------------------------------
@@ -826,7 +826,7 @@ const std::string& Interface::getImagePath(void)
 //-----------------------------------------------------
 void Interface::setImageIndex(int imgIdx)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
 	this->m_cam.setImageIndex(imgIdx);
 }
 
@@ -835,8 +835,8 @@ void Interface::setImageIndex(int imgIdx)
 //-----------------------------------------------------
 int Interface::getImageIndex()
 {
-  DEB_MEMBER_FUNCT();
-        return m_cam.getImageIndex();
+	DEB_MEMBER_FUNCT();
+	return m_cam.getImageIndex();
 }
 
 //-----------------------------------------------------

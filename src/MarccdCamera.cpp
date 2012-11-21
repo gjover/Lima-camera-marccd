@@ -73,42 +73,42 @@ enum {
 //- Ctor
 //---------------------------
 Camera::Camera(const std::string& camera_ip, 
-	       size_t port_num, 
+							 size_t port_num, 
 	       const std::string& img_path): 
-  _sock(0),
-  _image_path(img_path),
+	_sock(0),
+	_image_path(img_path),
   _image_name("buffer"),
   _full_img_name(""),
-  m_nb_frames(0),
-  m_image_size(0),
-  m_trigger_type(0),
-  m_exp_time(0),
+	m_nb_frames(0),
+	m_image_size(0),
+	m_trigger_type(0),
+	m_exp_time(0),
   m_lat_time(0),
   m_binning(2),
-  _marccd_state(TASK_STATE_IDLE),
-  m_status(Camera::Unknown),
-  _image_number(0),
+	_marccd_state(TASK_STATE_IDLE),
+	m_status(Camera::Unknown),
+	_image_number(0),
   _first_image(0),
-  _camera_ip(camera_ip),
-  _port_num(port_num),
-  _detector_model(""),
-  _detector_type(""),
-  _stop_sequence_finished(false),
+	_camera_ip(camera_ip),
+	_port_num(port_num),
+	_detector_model(""),
+	_detector_type(""),
+	_stop_sequence_finished(false),
   _abort(false),
   _bgAcquired(false),
   _saveBG(false),
-  _error("")
+	_error("")
 {
-  DEB_CONSTRUCTOR();
-  
+	DEB_CONSTRUCTOR();
+
   //std::cout   << "Camera::Camera() - ENTERING" << std::endl;
-  DEB_TRACE() << "Camera::Camera() - ENTERING ...";
-  
-  m_status = Camera::Ready;
-  
-  _detector_type  = "MARCCD" ;
-  _detector_model = "SX 165";
-  
+	DEB_TRACE() << "Camera::Camera() - ENTERING ...";
+
+	m_status = Camera::Ready;
+
+	_detector_type  = "MARCCD" ;
+	_detector_model = "SX 165";
+
   //std::cout   << "Camera::Camera() - DONE" << std::endl;
   DEB_TRACE() << "Camera::Camera() - DONE";
 
@@ -128,7 +128,7 @@ Camera::Camera(const Camera &other_cam)
 //---------------------------
 Camera::~Camera()
 {
-  DEB_DESTRUCTOR();
+	DEB_DESTRUCTOR();
   DEB_TRACE() << "Camera::~Camera() - ENTERING ...";
   //std::cout <<"Camera::~Camera() - ENTERING ..." << std::endl;
   
@@ -188,129 +188,129 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
       lastmsg = msg.type();
     }
   try
+  {
+    switch ( msg.type() )
     {
-      switch ( msg.type() )
-	{
-	  //-----------------------------------------------------
-	case yat::TASK_INIT:
-	  {
+      //-----------------------------------------------------
+      case yat::TASK_INIT:
+      {
 	    DEB_TRACE() << "Camera::->TASK_INIT";
-	    
-	    try
-	      {
-		//- internal YAT stuff cooking
-		yat::Socket::init();
-		//- create socket
-		_sock = new yat::ClientSocket ();
-		//- connect to MARCCD device
-		this->connect();
-		//- no error
-		this->_error.clear();
-	      }
-	    catch (yat::Exception &ye)
-	      {
-		this->enable_periodic_msg(false);
-		//- update error
-		this->_error = ye.errors[0].desc;
-		//this->status_str = "Camera::Camera : device initialization failed caught DevFailed trying to create yat::Socket\n";
-		if ( _sock )
-		  delete _sock;
-		_sock = 0;
+
+				try
+				{
+					//- internal YAT stuff cooking
+					yat::Socket::init();
+					//- create socket
+					_sock = new yat::ClientSocket ();
+					//- connect to MARCCD device
+					this->connect();
+					//- no error
+					this->_error.clear();
+				}
+				catch (yat::Exception &ye)
+				{
+					this->enable_periodic_msg(false);
+					//- update error
+					this->_error = ye.errors[0].desc;
+					//this->status_str = "Camera::Camera : device initialization failed caught DevFailed trying to create yat::Socket\n";
+					if ( _sock )
+						delete _sock;
+					_sock = 0;
 		//std::cout << "Camera::Camera : Camera::handle_message initialization failed caught yat::Exception trying to create yat::ClientSocket" 
 		//<< "\n\t_sock = " << _sock
 		//<< std::endl;
 		//std::cout << " caught YAT Exception [" << ye.errors[0].desc << "]" << std::endl;
-		return;
-	      }
-	    catch (...)
-	      {
-		this->enable_periodic_msg(false);
+					return;
+				}
+				catch (...)
+				{
+					this->enable_periodic_msg(false);
 		//std::cout << "Camera::handle_message : Camera initialization failed caught ... trying to create yat::ClientSocket" << std::endl;
-		//this->status_str = "Camera::init_device : device initialization failed caught ... trying to create yat::Socket\n";
-		if ( _sock )
-		  delete _sock;
-		_sock = 0;
-		return;
-	      }
-	    
-	    if ( this->_sock )
-	      {
-		this->enable_periodic_msg(true);
-		this->set_periodic_msg_period( kPERIODIC_MSG_PERIOD );
+					//this->status_str = "Camera::init_device : device initialization failed caught ... trying to create yat::Socket\n";
+					if ( _sock )
+						delete _sock;
+					_sock = 0;
+					return;
+				}
 
-		//- get image size to initialize ROI
-		Size size;
-		this->getImageSize(size);
-		std::cout << "Set the ROI to full frame" << std::endl;
-		Roi aFullFrame(0,0,size.getWidth(),size.getHeight());
-		this->setRoi(aFullFrame);
-	      }
-	    else
+				if ( this->_sock )
+				{
+					this->enable_periodic_msg(true);
+					this->set_periodic_msg_period( kPERIODIC_MSG_PERIOD );
+
+					//- get image size to initialize ROI
+					Size size;
+					this->getImageSize(size);
+					std::cout << "Set the ROI to full frame" << std::endl;
+					Roi aFullFrame(0,0,size.getWidth(),size.getHeight());
+					this->setRoi(aFullFrame);
+				}
+				else
 	      {
 		DEB_TRACE() << "TASK INIT -> CONNECTION FAILED !!!";
 	      //std::cout << " TASK INIT -> CONNECTION FAILED !!!" << std::endl;
 	      }
 	    //std::cout << "Camera::->TASK_INIT DONE." << std::endl;
 	    DEB_TRACE() << "Camera::->TASK_INIT DONE.";
-		
-	  }
-	  break;
-	  //-----------------------------------------------------
-	case yat::TASK_EXIT:
-	  {
+
+      }
+      break;
+      //-----------------------------------------------------
+      case yat::TASK_EXIT:
+      {
 	    DEB_TRACE() << "Camera::->TASK_EXIT";
-	    //- check if connection is up
-	    if( !this->_sock )
-	      {
-		//		status = Camera::Fault;
+				//- check if connection is up
+				if( !this->_sock )
+				{
+					//		status = Camera::Fault;
 		//std::cout << "Camera::handle_message -> no _sock !" << std::endl;
 		DEB_ERROR() << "Camera::handle_message -> no _sock !";
-		return;
-	      }
-	    try
-	      {
-		//- abort acquisition
-		this->write_read("abort");
-		
-		//-  Delete device allocated objects
-		this->disconnect ();
+					return;
+				}
+				try
+				{
+					//- abort acquisition
+					this->write_read("abort");
+
+					//-  Delete device allocated objects
+					this->disconnect ();
 		//std::cout << "Camera::handle_message -> disconnect ... " << std::endl;
-		
-		//- yat internal cooking
-		yat::Socket::terminate();
+
+					//- yat internal cooking
+					yat::Socket::terminate();
 		//std::cout << "Camera::handle_message -> terminate ... " << std::endl;
-	      }
-	    //- TODO : catch all exceptions !
-	    catch (...)
-	      {
-		// Error handling
-		std::cerr << "MARCCD TASK_EXIT -> An ... exception occurred!"  << std::endl;
-	      }
+				}
+				//- TODO : catch all exceptions !
+				catch (...)
+				{
+					// Error handling
+					std::cerr << "MARCCD TASK_EXIT -> An ... exception occurred!"  << std::endl;
+				}
 	    DEB_TRACE() << "Camera::->TASK_EXIT DONE.";
 	    //std::cout << "Camera::->TASK_EXIT DONE." << std::endl;
-	  }
-	  break;
-	  //-----------------------------------------------------
-	case yat::TASK_TIMEOUT:
-	  {
+      }
+      break;
+      //-----------------------------------------------------
+      case yat::TASK_TIMEOUT:
+      {
 	    DEB_TRACE() << "Camera::->TASK_TIMEOUT";
 	    
 	    //std::cout << "Camera::->TASK_TIMEOUT DONE." << std::endl;
-	  }
-	  break;
-	  //- TASK_PERIODIC ===================
-	case yat::TASK_PERIODIC:
-	  {
+      }
+      break;
+			//- TASK_PERIODIC ===================
+			case yat::TASK_PERIODIC:
+			{
 	    DEB_TRACE() << "Camera::->TASK_PERIODIC";
-	    //- code relative to the task's periodic job goes here
-	    this->get_marccd_state();
-	  }
-	  break;
-	  //- USER_DEFINED_MSG ================
-	case START_MSG:
-	  {
+				//- code relative to the task's periodic job goes here
+				this->get_marccd_state();
+			}
+			break;
+			//- USER_DEFINED_MSG ================
+      case START_MSG:
+      {
 	    DEB_TRACE() << "Camera::->START_MSG";
-	    
+
 	    try 
 	      {
 		this->perform_acquisition_sequence();
@@ -330,14 +330,14 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 		throw  LIMA_HW_EXC(Error, "Camera::->START_MSG ") 
 		  << DEB_HEX(this->_marccd_state);	
 	      }
-	    
+
 	    DEB_TRACE() << "Camera::->START_MSG DONE";
 	    //std::cout << "Camera::->START_MSG DONE." << std::endl;
-	  }
-	  break;
-	  //-----------------------------------------------------
-	case STOP_MSG:
-	  {
+      }
+      break;
+      //-----------------------------------------------------
+      case STOP_MSG:
+      {
 	    DEB_TRACE() << "Camera::->STOP_MSG";
 
 	    try 
@@ -358,19 +358,19 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 		throw  LIMA_HW_EXC(Error, "Camera::->STOP_MSG ") 
 		  << DEB_HEX(this->_marccd_state);	
 	      }
-	    
+
 	    DEB_TRACE() << "Camera::->STOP_MSG DONE";
 	    //std::cout << "Camera::->STOP_MSG DONE." << std::endl;
-	  }
-	  break;
-	  //-----------------------------------------------------
-	case BACKGROUND_FRAME_MSG:
-	  {
+      }
+      break;
+      //-----------------------------------------------------
+      case BACKGROUND_FRAME_MSG:
+      {
 	    DEB_TRACE() << "Camera::->BACKGROUND_FRAME_MSG";
-	    
+
 	    try
 	      {
-		this->perform_background_frame();
+				this->perform_background_frame();
 	      }
 	    catch (Exception e)
 	      {
@@ -386,22 +386,22 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 		throw  LIMA_HW_EXC(Error, "Camera::->BACKGROUND_FRAME_MSG ") 
 		  << DEB_HEX(this->_marccd_state);	
 	      }
-	    
+
 	    //std::cout << "Camera::->BACKGROUND_FRAME_MSG DONE." << std::endl;
 	    DEB_TRACE() << "Camera::->BACKGROUND_FRAME_MSG DONE";
-	  }
-	  break;
-	}
+      }
+      break;
     }
+  }
   catch(yat::Exception& ex)	//- XE : Dangerous -> 'cause cannot be caught !!!
-    {
+  {
       //std::cout << "\n\t****** HANDLE_MSG -> Error on YAT exception which desc is : " << ex.errors[0].desc << std::endl;
-      //throw;
-    }
+		//throw;
+  }
   catch(...)
-    {
+  {
       //std::cout << "\n\t****** HANDLE_MSG -> Error : Generic Exception caught !!!" << std::endl;
-    }
+  }
 }
 
 //---------------------------
@@ -409,24 +409,24 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 //---------------------------
 void Camera::start()
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   DEB_TRACE() << "Camera::start() - ENTERING ..." ;
   //std::cout <<"Camera::start() - ENTERING ..." << std::endl;
-  
-  if( !this->_sock )
-    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
-  
-  //- prepare msg
-  yat::Message * msg = new yat::Message(START_MSG, MAX_USER_PRIORITY);
-  if ( !msg )
-    {
-      std::cerr << "Camera::start FAILED -> yat::Message allocation FAILED!"  << std::endl;
-      //- TODO : gestion erreur !???
-      return;
-    }
-  //- don't wait till the message is processed !!
-  this->post(msg);
-  
+
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+
+	//- prepare msg
+	yat::Message * msg = new yat::Message(START_MSG, MAX_USER_PRIORITY);
+	if ( !msg )
+	{
+		std::cerr << "Camera::start FAILED -> yat::Message allocation FAILED!"  << std::endl;
+		//- TODO : gestion erreur !???
+		return;
+	}
+	//- don't wait till the message is processed !!
+	this->post(msg);
+
   DEB_TRACE() << "Camera::start() - MARCCD DONE" ;
   //std::cout << "Camera::start() - MARCCD DONE" << std::endl;
 }
@@ -436,26 +436,26 @@ void Camera::start()
 //---------------------------
 void Camera::stop()
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   DEB_TRACE() << "Camera::stop() - ENTERING ...";
   //std::cout << "Camera::stop() - ENTERING ..." << std::endl;
-  
-  if( !this->_sock )
-    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
-  
+
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+
   this->_abort = true;
-  //- prepare msg
-  yat::Message * msg = new yat::Message(STOP_MSG, MAX_USER_PRIORITY);
-  if ( !msg )
-    {
-      std::cerr << "Camera::stop -> yat::Message allocation FAILED!"  << std::endl;
-      //- TODO : gestion erreur !???
-      return;
-    }
-  
-  //- don't wait till the message is processed !!
-  this->post(msg);
-  
+	//- prepare msg
+	yat::Message * msg = new yat::Message(STOP_MSG, MAX_USER_PRIORITY);
+	if ( !msg )
+	{
+		std::cerr << "Camera::stop -> yat::Message allocation FAILED!"  << std::endl;
+		//- TODO : gestion erreur !???
+		return;
+	}
+
+	//- don't wait till the message is processed !!
+	this->post(msg);
+
   DEB_TRACE() << "Camera::stop() - MARCCD DONE" ;
   //std::cout << "Camera::stop() - MARCCD DONE" << std::endl;
 }
@@ -465,28 +465,28 @@ void Camera::stop()
 //---------------------------
 void Camera::take_background_frame()
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   DEB_TRACE() << "Camera::take_background_frame() - ENTERING ...";
   //std::cout << "Camera::take_background_frame() - ENTERING ..." << std::endl;
 
   _bgAcquired = false;
 
-  if( !this->_sock )
-    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
-  
-  
-  //- prepare msg
-  yat::Message * msg = new yat::Message(BACKGROUND_FRAME_MSG, MAX_USER_PRIORITY);
-  if ( !msg )
-    {
-      std::cerr << "Camera::take_background_frame -> yat::Message allocation FAILED!"  << std::endl;
-      //- TODO : gestion erreur !???
-      return;
-    }
-  
-  //- don't wait till the message is processed !!
-  this->post(msg);
-  
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+
+
+	//- prepare msg
+	yat::Message * msg = new yat::Message(BACKGROUND_FRAME_MSG, MAX_USER_PRIORITY);
+	if ( !msg )
+	{
+		std::cerr << "Camera::take_background_frame -> yat::Message allocation FAILED!"  << std::endl;
+		//- TODO : gestion erreur !???
+		return;
+	}
+
+	//- don't wait till the message is processed !!
+	this->post(msg);
+
   DEB_TRACE() << "Camera::take_background_frame() - MARCCD DONE" ;
   //std::cout << "Camera::take_background_frame() - MARCCD DONE" << std::endl;
 }
@@ -523,13 +523,13 @@ void Camera::getImageSize(Size& size)
 	int sizeX, sizeY;
 	try
 	{
-	  yat::MutexLock scoped_lock(this->_lock);
-	  //- get the max image size of the detector
-	  resp = this->write_read("get_size");
-	  
-	  sscanf(resp.c_str(), "%d,%d", &sizeX, &sizeY);
-	  
-	  size = Size(sizeX,sizeY);
+		yat::MutexLock scoped_lock(this->_lock);
+		//- get the max image size of the detector
+		resp = this->write_read("get_size");
+
+		sscanf(resp.c_str(), "%d,%d", &sizeX, &sizeY);
+
+		size = Size(sizeX,sizeY);
 	}
 	catch (...)
 	{
@@ -635,10 +635,10 @@ void Camera::setTrigMode(TrigMode mode)
 //-----------------------------------------------------
 void Camera::getTrigMode(TrigMode& mode)
 {
-  DEB_MEMBER_FUNCT();
-  //- TODO : for the moment and device compatibility forced to INTERNAL !!!
-  mode = IntTrig;
-  DEB_RETURN() << DEB_VAR1(mode);
+    DEB_MEMBER_FUNCT();
+		//- TODO : for the moment and device compatibility forced to INTERNAL !!!
+		mode = IntTrig;
+	DEB_RETURN() << DEB_VAR1(mode);
 }
 
 
@@ -647,7 +647,7 @@ void Camera::getTrigMode(TrigMode& mode)
 //-----------------------------------------------------
 void Camera::setExpTime(double exp_time)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   //std::cout << "Camera::setExpTime(" <<exp_time<< ")" << std::endl;
   DEB_PARAM() << DEB_VAR1(exp_time);
 
@@ -667,7 +667,7 @@ void Camera::setExpTime(double exp_time)
 //-----------------------------------------------------
 void Camera::getExpTime(double& exp_time)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   exp_time = m_exp_time;
   DEB_RETURN() << DEB_VAR1(exp_time);
 }
@@ -677,8 +677,8 @@ void Camera::getExpTime(double& exp_time)
 //-----------------------------------------------------
 void Camera::setLatTime(double lat_time)
 {
-  DEB_MEMBER_FUNCT();
-  DEB_PARAM() << DEB_VAR1(lat_time);
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(lat_time);
 
   // Check if the exposure time is enough for the current binning
   // Minimal exposure time is about the minimal readout time
@@ -695,9 +695,9 @@ void Camera::setLatTime(double lat_time)
 //-----------------------------------------------------
 void Camera::getLatTime(double& lat_time)
 {
-  DEB_MEMBER_FUNCT();
+	DEB_MEMBER_FUNCT();
   lat_time = m_lat_time;
-  DEB_RETURN() << DEB_VAR1(lat_time);
+	DEB_RETURN() << DEB_VAR1(lat_time);
 }
 
 //-----------------------------------------------------
@@ -705,9 +705,9 @@ void Camera::getLatTime(double& lat_time)
 //-----------------------------------------------------
 void Camera::setNbFrames(int nb_frames)
 {
-  DEB_MEMBER_FUNCT();
-  DEB_PARAM() << DEB_VAR1(nb_frames);
-  m_nb_frames = nb_frames;
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(nb_frames);
+	m_nb_frames = nb_frames;
 }
 
 //-----------------------------------------------------
@@ -715,9 +715,9 @@ void Camera::setNbFrames(int nb_frames)
 //-----------------------------------------------------
 void Camera::getNbFrames(int& nb_frames)
 {
-  DEB_MEMBER_FUNCT();
-  nb_frames = m_nb_frames;
-  DEB_RETURN() << DEB_VAR1(nb_frames);
+	DEB_MEMBER_FUNCT();
+	nb_frames = m_nb_frames;
+	DEB_RETURN() << DEB_VAR1(nb_frames);
 }
 
 //-----------------------------------------------------
@@ -725,9 +725,9 @@ void Camera::getNbFrames(int& nb_frames)
 //-----------------------------------------------------
 void Camera::getFrameRate(double& frame_rate)
 {
-  DEB_MEMBER_FUNCT();
-  frame_rate = 123456.7;
-  DEB_RETURN() << DEB_VAR1(frame_rate);
+	DEB_MEMBER_FUNCT();
+		frame_rate = 123456.7;
+	DEB_RETURN() << DEB_VAR1(frame_rate);
 }
 
 //-----------------------------------------------------
@@ -856,31 +856,31 @@ void Camera::checkBin(Bin& bin)
 //-----------------------------------------------------
 void Camera::setBinning(const Bin &bin)
 {
-  std::stringstream bin_values;
-  
-  if( !this->_sock )
-    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
-  
+	std::stringstream bin_values;
+
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+
   //- This is MarCCD supported bin values : "2,2" ; "3,3" ; "4,4" ; "8,8" ;
-  try
-    {
-      if ( bin.getY() == bin.getX() )
+	try
 	{
+		if ( bin.getY() == bin.getX() )
+		{
 	  m_binning = bin.getX();
 	  bin_values << "set_bin," << m_binning << "," << m_binning << std::ends;
 	  //std::cout << "Camera::setBinning -> sending : *" << bin_values.str() << "*" << std::endl;
-	  yat::MutexLock scoped_lock(this->_lock);
-	  //- set the new binning values
-	  this->write_read(bin_values.str());
+			yat::MutexLock scoped_lock(this->_lock);
+			//- set the new binning values
+			this->write_read(bin_values.str());
 	  //std::cout << "Camera::setBinning -> DONE" << std::endl;
+		}
 	}
-    }
-  catch (...)
-    {
-      //- Error handling
-      std::cerr << "MARCAM SET_BINNING -> An ... exception occurred!"  << std::endl;
-      //- XE throw LIMA_HW_EXC(Error, e.GetDescription());
-    }
+	catch (...)
+	{
+		//- Error handling
+		std::cerr << "MARCAM SET_BINNING -> An ... exception occurred!"  << std::endl;
+		//- XE throw LIMA_HW_EXC(Error, e.GetDescription());
+	}
 }
 
 //-----------------------------------------------------
@@ -889,37 +889,37 @@ void Camera::setBinning(const Bin &bin)
 void Camera::getBinning(Bin& bin)
 {
   
-  std::cout << "\n\t\tMarccdCamera::getBinning DONE -> ENTERING ..." << std::endl;
+			std::cout << "\n\t\tMarccdCamera::getBinning DONE -> ENTERING ..." << std::endl;
   DEB_MEMBER_FUNCT();
-  
-  if( !this->_sock )
-    throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
 
-  std::string resp ("");
-  int binX, binY;
-  
-  try
-    {
-      yat::MutexLock scoped_lock(this->_lock);
-      //- get the new binning values
-      resp = this->write_read("get_bin");
-      
-      sscanf(resp.c_str(), "%d,%d", &binX, &binY);
-      
-      if( binX == binY )
+	if( !this->_sock )
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+
+	std::string resp ("");
+	int binX, binY;
+
+	try
 	{
-	  bin = Bin(binX, binY);
+		yat::MutexLock scoped_lock(this->_lock);
+		//- get the new binning values
+		resp = this->write_read("get_bin");
+
+		sscanf(resp.c_str(), "%d,%d", &binX, &binY);
+
+		if( binX == binY )
+		{
+			bin = Bin(binX, binY);
 	  m_binning = binX;
 	  //std::cout << "MarccdCamera::getBinning DONE -> binX = " << binX << " binY = " << binY << std::endl;
-	}
+		}
       
-    }
-  catch (...)
-    {
-      // Error handling
-      std::cerr << "MARCAM GET_BINNING -> An ... exception occurred!"  << std::endl;
-      //- XE throw LIMA_HW_EXC(Error, e.GetDescription());
-    }
+	}
+	catch (...)
+	{
+		// Error handling
+		std::cerr << "MARCAM GET_BINNING -> An ... exception occurred!"  << std::endl;
+		//- XE throw LIMA_HW_EXC(Error, e.GetDescription());
+	}
 }
 
 //-----------------------------------------------------
@@ -927,43 +927,43 @@ void Camera::getBinning(Bin& bin)
 //-----------------------------------------------------
 void Camera::getStatus(Camera::Status& status)
 {
-  //- check if connection is up
-  if( !this->_sock )
-    {
-      status = Camera::Fault;
+	//- check if connection is up
+	if( !this->_sock )
+	{
+		status = Camera::Fault;
       //std::cout << "Camera::getStatus -> no _sock !" << std::endl;
-      return;
-    }
-  
-  size_t acquireStatus, readoutStatus, correctStatus, writingStatus, dezingerStatus;
-  
-  DEB_MEMBER_FUNCT();
-  
-  this->get_marccd_state();
-  
-  //size_t mar_status = TASK_STATE(this->_marccd_state);
-  
-  acquireStatus = TASK_STATUS(this->_marccd_state, TASK_ACQUIRE);
-  readoutStatus = TASK_STATUS(this->_marccd_state, TASK_READ);
-  correctStatus = TASK_STATUS(this->_marccd_state, TASK_CORRECT);
-  writingStatus = TASK_STATUS(this->_marccd_state, TASK_WRITE);
-  dezingerStatus= TASK_STATUS(this->_marccd_state, TASK_DEZINGER);
-  
+		return;
+	}
+
+	size_t acquireStatus, readoutStatus, correctStatus, writingStatus, dezingerStatus;
+
+	DEB_MEMBER_FUNCT();
+
+	this->get_marccd_state();
+
+	//size_t mar_status = TASK_STATE(this->_marccd_state);
+
+	acquireStatus = TASK_STATUS(this->_marccd_state, TASK_ACQUIRE);
+	readoutStatus = TASK_STATUS(this->_marccd_state, TASK_READ);
+	correctStatus = TASK_STATUS(this->_marccd_state, TASK_CORRECT);
+	writingStatus = TASK_STATUS(this->_marccd_state, TASK_WRITE);
+	dezingerStatus= TASK_STATUS(this->_marccd_state, TASK_DEZINGER);
+
   if (!_bgAcquired)                                 m_status = Camera::Config;
   else if (this->_marccd_state == 0)                m_status = Camera::Ready;
-  else if (this->_marccd_state == 7)                m_status = Camera::Fault;
-  else if (this->_marccd_state == 8)                m_status = Camera::Ready;  /* This is really busy interpreting command but we don't have a status for that yet */
-  else if (acquireStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Exposure;
-  else if (readoutStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;
-  else if (correctStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;/*ADStatusCorrect*/
-  else if (writingStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;/*ADStatusSaving*/
-  if ((acquireStatus | readoutStatus | correctStatus | writingStatus | dezingerStatus) & 	TASK_STATUS_ERROR)
-    m_status = Camera::Fault;
-  
-  status = m_status;
-  
+	else if (this->_marccd_state == 7)                m_status = Camera::Fault;
+	else if (this->_marccd_state == 8)                m_status = Camera::Ready;  /* This is really busy interpreting command but we don't have a status for that yet */
+	else if (acquireStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Exposure;
+	else if (readoutStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;
+	else if (correctStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;/*ADStatusCorrect*/
+	else if (writingStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;/*ADStatusSaving*/
+	if ((acquireStatus | readoutStatus | correctStatus | writingStatus | dezingerStatus) & 	TASK_STATUS_ERROR)
+		m_status = Camera::Fault;
+
+	status = m_status;
+
   DEB_TRACE() << "Camera::getStatus() - status = " << status;
-  DEB_RETURN() << DEB_VAR1(DEB_HEX(status));
+	DEB_RETURN() << DEB_VAR1(DEB_HEX(status));
 }
 
 //-----------------------------------------------------
@@ -1110,67 +1110,67 @@ float Camera::getWavelength()
 void Camera::disconnect()
 {
   DEB_MEMBER_FUNCT();
-  //- check if connection is up
-  if( !this->_sock )
-    {
-      //status = Camera::Fault;
+	//- check if connection is up
+	if( !this->_sock )
+	{
+		//status = Camera::Fault;
       //std::cout << "Camera::disconnect -> no _sock !" << std::endl;
-      return;
-    }
-  
-  try
-    {
-      this->_sock->disconnect();
+		return;
+	}
+	
+	try
+	{
+		this->_sock->disconnect();
       //std::cout << "INFO::Camera::disconnect(): DONE !" << std::endl;
-    }
-  catch(yat::SocketException & ySe)
-    {
+	}
+	catch(yat::SocketException & ySe)
+	{
       //std::cout << "ERROR::Camera::disconnect -> yat::SocketException : " << ySe.errors[0].desc << std::endl;
-    }
-  catch(...)
-    {
+	}
+	catch(...)
+	{
       //std::cout << "ERROR::Camera::disconnect -> [...] Exception." << std::endl;
-    }
+	}
 }
 
 void Camera::connect()
 {
   DEB_MEMBER_FUNCT();
   //std::cout << "Camera::connect -> ENTERING ..." << std::endl;
-  //- check if connection is up
-  if( !this->_sock )
-    {
-      //status = Camera::Fault;
+	//- check if connection is up
+	if( !this->_sock )
+	{
+//		status = Camera::Fault;
       //std::cout << "Camera::connect -> no _sock !" << std::endl;
-      return;
-    }
-  
-  try
-    {
-      this->_sock->set_option(yat::Socket::SOCK_OPT_KEEP_ALIVE, 1);
-      this->_sock->set_option(yat::Socket::SOCK_OPT_NO_DELAY, 1);
-      this->_sock->set_option(yat::Socket::SOCK_OPT_OTIMEOUT, 0);
-      this->_sock->set_option(yat::Socket::SOCK_OPT_ITIMEOUT, 0);
+		return;
+	}
+
+	try
+	{
+		this->_sock->set_option(yat::Socket::SOCK_OPT_KEEP_ALIVE, 1);
+		this->_sock->set_option(yat::Socket::SOCK_OPT_NO_DELAY, 1);
+		this->_sock->set_option(yat::Socket::SOCK_OPT_OTIMEOUT, 0);
+		this->_sock->set_option(yat::Socket::SOCK_OPT_ITIMEOUT, 0);
       //std::cout << "Camera::connect -> OPT set" << std::endl;
-      
-      yat::Address addr(this->_camera_ip, this->_port_num);
+
+		yat::Address addr(this->_camera_ip, this->_port_num);
       //std::cout << "INFO::Camera::connect(): made Address... !" << std::endl;
-      
-      this->_sock->connect(addr);
+
+		this->_sock->connect(addr);
       //std::cout << "INFO::Camera::connect(): connect DONE." << std::endl;
-    }
-  //- TODO : on error -> sock = NULL
-  catch(yat::SocketException & ySe)
-    {
+	}
+	//- TODO : on error -> sock = NULL
+	catch(yat::SocketException & ySe)
+	{
       //std::cout << "ERROR::Camera::connect -> yat::SocketException : " << ySe.errors[0].desc << std::endl;
-      throw;
-    }
-  catch(...)
-    {
+		throw;
+	}
+	catch(...)
+	{
       //std::cout << "ERROR::Camera::connect -> [...] Exception." << std::endl;
       DEB_ERROR() << "ERROR::Camera::connect -> [...] Exception." ;
-      throw;
-    }
+		throw;
+	}
 }
 
 //-----------------------------------------------------
@@ -1181,7 +1181,7 @@ std::string Camera::read()
 	//- check if connection is up
 	if( !this->_sock )
 	{
-	  //status = Camera::Fault;
+//		status = Camera::Fault;
 	  //std::cout << "Camera::read -> no _sock !" << std::endl;
 		throw;
 	}
@@ -1190,8 +1190,8 @@ std::string Camera::read()
 	try
 	{
 	//- TODO : CHECK if sock = NULL
-	  this->_sock->receive(response);
-	  //std::cout << "INFO::Camera::read(): response = " << response << std::endl;
+		this->_sock->receive(response);
+		//std::cout << "INFO::Camera::read(): response = " << response << std::endl;
 	}
 	catch(yat::SocketException & ySe)
 	{
@@ -1216,18 +1216,18 @@ void Camera::write(std::string cmd_to_send)
 	//- check if connection is up
 	if( !this->_sock )
 	{
-	  //status = Camera::Fault;
+//		status = Camera::Fault;
 	  //std::cout << "Camera::write -> no _sock !" << std::endl;
 		return;
 	}
 	
 	try
 	{
-	  size_t data_size = cmd_to_send.size() + 1; //- +1 for '\0' character
-	  //- TODO : CHECK if sock = NULL
-	  this->_sock->send(cmd_to_send.c_str(), data_size);
+		size_t data_size = cmd_to_send.size() + 1; //- +1 for '\0' character
+	//- TODO : CHECK if sock = NULL
+		this->_sock->send(cmd_to_send.c_str(), data_size);
 
-	  //std::cout << "\n\nINFO::Camera::write(): cmd_to_be_send = " << cmd_to_send << " WRITTEN." << std::endl;
+//std::cout << "\n\nINFO::Camera::write(): cmd_to_be_send = " << cmd_to_send << " WRITTEN." << std::endl;
 	}
 	catch(yat::SocketException & ySe)
 	{
@@ -1251,7 +1251,7 @@ std::string Camera::write_read(std::string cmd_to_send)
 	  //status = Camera::Fault;
 	  //std::cout << "Camera::write_read -> no _sock !" << std::endl;
 
-	  throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
+		throw LIMA_HW_EXC(Error, "No communication opened with Marccd.");
 	}
 	
 	std::string response("");
@@ -1279,8 +1279,8 @@ void Camera::perform_acquisition_sequence()
   clock_gettime(CLOCK_MONOTONIC,&now);
   clock_gettime(CLOCK_MONOTONIC,&exposure); 
   clock_gettime(CLOCK_MONOTONIC,&latency);
- 
-  this->_stop_sequence_finished = false;
+
+	this->_stop_sequence_finished = false;
   this->_full_img_name = "";
 
   int laststep = 0;
@@ -1304,7 +1304,7 @@ void Camera::perform_acquisition_sequence()
 	  break;
 
 	case 1: //- Wait for Marccd to not be acquiring 
-	  this->get_marccd_state();
+		this->get_marccd_state();
 	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
 	      || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
 	      || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
@@ -1322,7 +1322,7 @@ void Camera::perform_acquisition_sequence()
 	  clock_gettime(CLOCK_MONOTONIC,&now);
 	  if (latency.tv_sec + (double) latency.tv_nsec /1000000000.0 
 	      - now.tv_sec - (double) now.tv_nsec /1000000000.0 > 0.2)
-	    {
+{
 	      sleep(0.1);
 	      break;
 	    }
@@ -1333,11 +1333,11 @@ void Camera::perform_acquisition_sequence()
 	  {
 	    std::string cmd_to_send("start");
 
-	    yat::MutexLock scoped_lock(this->_lock);
+	yat::MutexLock scoped_lock(this->_lock);
 	    clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&latency,NULL); 
 	    clock_gettime(CLOCK_MONOTONIC,&now);
-	    this->write_read(cmd_to_send);
-	  }
+	this->write_read(cmd_to_send);
+}
 	  // Define when the exposure time finish
 	  sec = (int) m_exp_time;
 	  nsec= (m_exp_time - sec)*1000000000;
@@ -1375,7 +1375,7 @@ void Camera::perform_acquisition_sequence()
 
 	  step++;
 	  break;
-	  
+
 	case 4: //- Wait for acquisition to be started
 	  this->get_marccd_state();
 	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
@@ -1384,8 +1384,8 @@ void Camera::perform_acquisition_sequence()
 	    {
 	      throw LIMA_HW_EXC(Error, "Camera::perform_start_sequence (Wait before start) ")
 		<< DEB_HEX(this->_marccd_state);		    
-	    }
-	  
+}
+
 	  if (!TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_EXECUTING))
 	    break;
 	  step++;
@@ -1395,7 +1395,7 @@ void Camera::perform_acquisition_sequence()
 	  clock_gettime(CLOCK_MONOTONIC,&now);
 	  if (exposure.tv_sec + (double) exposure.tv_nsec /1000000000.0 
 	      - now.tv_sec - (double) now.tv_nsec /1000000000.0 > 0.2)
-	    {
+{
 	      sleep(0.1);
 	      break; 
 	    }
@@ -1415,19 +1415,19 @@ void Camera::perform_acquisition_sequence()
 	      }
 	    this->_full_img_name = this->_image_path + this->_image_name 
 	      + "_" + yat::XString<size_t>::to_string(this->_image_number);
-	    cmd_to_send += this->_full_img_name;
-	    
-	    yat::MutexLock scoped_lock(this->_lock);
+	cmd_to_send += this->_full_img_name;
+
+	yat::MutexLock scoped_lock(this->_lock);
 	    clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&exposure,NULL); 
-	    this->write_read(cmd_to_send);
+	this->write_read(cmd_to_send);
 
 	    _saveBG = false;
-	  }
+}
 	  step++;
 	  break;
 
 	case 7: //- Wait for Marccd until writing has finished
-	  this->get_marccd_state();
+		this->get_marccd_state();
 	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
 	      || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
 	      || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
@@ -1438,9 +1438,9 @@ void Camera::perform_acquisition_sequence()
 	  
 	  if (TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATE_WRITING))
 	    break;
-	  
-	  this->_image_number++;
-	  this->_stop_sequence_finished = true;
+
+	this->_image_number++;
+	this->_stop_sequence_finished = true;
 	  step++;
 	  break;
 
@@ -1459,13 +1459,13 @@ void Camera::perform_acquisition_sequence()
 void Camera::perform_background_frame()
 {
   //std::cout << "\n\n\nCamera::perform_background_frame <- " << std::endl;
-  
-  //- wait for detector NOT be reading
+
+	//- wait for detector NOT be reading
   //std::cout << "Wait for READ + EXECUTING" << std::endl;
 
-  do
-    {
-      this->get_marccd_state();
+	do
+	{
+		this->get_marccd_state();
       if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
@@ -1474,23 +1474,23 @@ void Camera::perform_background_frame()
 	    << DEB_HEX(this->_marccd_state);		    
 	}
       //std::cout << "Camera::perform_background_frame -> wait for detector NOT be reading, state = " << this->_marccd_state << std::endl;
-    }while(TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_EXECUTING));
+	}while(TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_EXECUTING));
   //std::cout << "Done for READ + EXECUTING" << std::endl;
   //std::cout << "\t **** Wait for Marccd to not be acquiring DONE." << std::endl;
+
+	//- Send readout 1 => read data into background frame storage
+	std::string cmd_to_send("readout,1");
   
-  //- Send readout 1 => read data into background frame storage
-  std::string cmd_to_send("readout,1");
-  
-  {
-    yat::MutexLock scoped_lock(this->_lock);
-    this->write_read(cmd_to_send);
-  }
-  
+	{
+		yat::MutexLock scoped_lock(this->_lock);
+		this->write_read(cmd_to_send);
+	}
+
   // Wait for idle?
-  this->get_marccd_state();
-  while ( this->_marccd_state )
-    {
-      this->get_marccd_state();
+	this->get_marccd_state();
+	while ( this->_marccd_state )
+	{
+		this->get_marccd_state();
       if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
@@ -1498,18 +1498,18 @@ void Camera::perform_background_frame()
 	  throw LIMA_HW_EXC(Error, "Camera::perform_background_frame (Wait before readout,2) ")
 	    << DEB_HEX(this->_marccd_state);		    
 	}
-    }
-  
-  //- Send readout 2 => read data into system scratch storage
-  cmd_to_send = "readout,2";
-  {
-    yat::MutexLock scoped_lock(this->_lock);
-    this->write_read(cmd_to_send);
-  }
-  this->get_marccd_state();
-  while ( this->_marccd_state )
-    {
-      this->get_marccd_state();
+	}
+
+	//- Send readout 2 => read data into system scratch storage
+	cmd_to_send = "readout,2";
+	{
+		yat::MutexLock scoped_lock(this->_lock);
+		this->write_read(cmd_to_send);
+	}
+	this->get_marccd_state();
+	while ( this->_marccd_state )
+	{
+		this->get_marccd_state();
       if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
@@ -1517,21 +1517,21 @@ void Camera::perform_background_frame()
 	  throw LIMA_HW_EXC(Error, "Camera::perform_background_frame (Wait before dezinger,1) ")
 	    << DEB_HEX(this->_marccd_state);		    
 	}
-    }
+	}
   //std::cout << "\n\t **** READOUT 2 DONE." << std::endl;
-  
-  //- Send dezinger 1 => use and store into the current background frame
-  cmd_to_send = "dezinger,1";
-  {
-    yat::MutexLock scoped_lock(this->_lock);
-    this->write_read(cmd_to_send);
-  }
-  //this->get_marccd_state();
+
+	//- Send dezinger 1 => use and store into the current background frame
+	cmd_to_send = "dezinger,1";
+	{
+		yat::MutexLock scoped_lock(this->_lock);
+		this->write_read(cmd_to_send);
+	}
+	//this->get_marccd_state();
   
   //std::cout << "Wait for DEZINGER + EXECUTING" << std::endl;
-  do
-    {
-      this->get_marccd_state();
+	do
+	{
+		this->get_marccd_state();
       if (TEST_TASK_STATUS(this->_marccd_state,TASK_ACQUIRE,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_READ,TASK_STATUS_ERROR) 
 	  || TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATUS_ERROR))
@@ -1540,23 +1540,23 @@ void Camera::perform_background_frame()
 	    << DEB_HEX(this->_marccd_state);		    
 	}
       //std::cout << "Camera::perform_background_frame -> dezinger STATE : " << this->_marccd_state << std::endl;
-    }while(TEST_TASK_STATUS(this->_marccd_state,TASK_DEZINGER,TASK_STATUS_EXECUTING));
+	}while(TEST_TASK_STATUS(this->_marccd_state,TASK_DEZINGER,TASK_STATUS_EXECUTING));
 
   _bgAcquired = true;
 
   //std::cout << "Done for DEZINGER + EXECUTING" << std::endl;
 
-  //std::cout << "Camera::perform_background_frame -> readout_2 FINISHED : state = " << this->_marccd_state << std::endl;
-  //std::cout << "Camera::perform_background_frame -> dezinger,1, state = " << this->_marccd_state << std::endl;
-  
-  
+	//std::cout << "Camera::perform_background_frame -> readout_2 FINISHED : state = " << this->_marccd_state << std::endl;
+	//std::cout << "Camera::perform_background_frame -> dezinger,1, state = " << this->_marccd_state << std::endl;
+
+
   //std::cout << "Camera::perform_background_frame -> \n\n" << std::endl;
-  
-  //do
-  //{
-  //	this->get_marccd_state();
-  //	std::cout << "Camera::perform_background_frame -> CHECKING MARCCD STATE : " << this->_marccd_state << std::endl;
-  //}while(TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATE_WRITING));
+
+	//do
+	//{
+	//	this->get_marccd_state();
+	//	std::cout << "Camera::perform_background_frame -> CHECKING MARCCD STATE : " << this->_marccd_state << std::endl;
+	//}while(TEST_TASK_STATUS(this->_marccd_state,TASK_WRITE,TASK_STATE_WRITING));
 }
 
 //-----------------------------------------------------
@@ -1607,11 +1607,11 @@ void Camera::get_marccd_state()
 	std::string stateStr("");
 	//- get detector state string value
 	{
-	  yat::MutexLock scoped_lock(this->_lock);
+		yat::MutexLock scoped_lock(this->_lock);
 	  try
 	    {
-	      stateStr = this->write_read("get_state");
-	    }
+		stateStr = this->write_read("get_state");
+	}
 	  catch(yat::Exception &ye)
 	    {
 	      std::cerr << "ERROR::Camera::get_marccd_state() caught YAT Exception [" << ye.errors[0].desc << "]" << std::endl;
@@ -1667,7 +1667,7 @@ const std::string& Camera::getImageFileName(void)
 //-----------------------------------------------------
 const std::string& Camera::getFullImgName()
 {
-  //- image name = full path + image name + "_" + image index
+	//- image name = full path + image name + "_" + image index
   //std::cout << "\t\tCamera::getFullImgName() = " << this->_full_img_name << std::endl;
   return this->_full_img_name;
 }
