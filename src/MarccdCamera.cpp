@@ -949,10 +949,10 @@ void Camera::getStatus(Camera::Status& status)
 	writingStatus = TASK_STATUS(this->_marccd_state, TASK_WRITE);
 	dezingerStatus= TASK_STATUS(this->_marccd_state, TASK_DEZINGER);
 
-  if (!_bgAcquired)                                 m_status = Camera::Config;
-  else if (this->_marccd_state == 0)                m_status = Camera::Ready;
-	else if (this->_marccd_state == 7)                m_status = Camera::Fault;
-	else if (this->_marccd_state == 8)                m_status = Camera::Ready;  /* This is really busy interpreting command but we don't have a status for that yet */
+	if (!_bgAcquired and !_saveBG)     m_status = Camera::Config;
+	else if (this->_marccd_state == 0) m_status = Camera::Ready;
+	else if (this->_marccd_state == 7) m_status = Camera::Fault;
+	else if (this->_marccd_state == 8) m_status = Camera::Ready;  /* This is really busy interpreting command but we don't have a status for that yet */
 	else if (acquireStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Exposure;
 	else if (readoutStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;
 	else if (correctStatus & (TASK_STATUS_EXECUTING)) m_status = Camera::Readout;/*ADStatusCorrect*/
@@ -1421,7 +1421,8 @@ void Camera::perform_acquisition_sequence()
 	    clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&exposure,NULL); 
 	this->write_read(cmd_to_send);
 
-	    _saveBG = false;
+	if (_saveBG) _bgAcquired = true;
+	_saveBG = false;
 }
 	  step++;
 	  break;
